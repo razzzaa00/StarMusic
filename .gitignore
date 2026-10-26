@@ -1,0 +1,14 @@
+node_modules/
+dist/
+bin/yt-dlp
+bin/yt-dlp.exe
+bin/ffmpeg
+bin/ffmpeg.exe
+bin/ffprobe
+bin/ffprobe.exe
+*.log
+.DS_Store
+.env
+dev-app-update.yml
+plugins/lastfm-scrobbler.js
+test/lastfm-scrobbler.test.js

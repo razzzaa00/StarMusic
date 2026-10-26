@@ -1,0 +1,76 @@
+name: Bug report
+description: Report an issue or unexpected behavior in the desktop app
+title: "[BUG]: "
+labels: ["Bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        > [!WARNING]
+        > ### DO NOT REPORT MOBILE BUGS HERE!
+        > The mobile version is developed by third parties and is not maintained in this repository.
+        > Any issues related to mobile devices (iOS / Android) will be closed immediately without review.
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Desktop Confirmation
+      options:
+        - label: I confirm this issue is NOT related to the mobile version (iOS / Android)
+          required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of what the bug is.
+      placeholder: Tell us what you see...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: To Reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '....'
+        3. Scroll down to '....'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots / Media
+      description: Drag & drop images or logs here.
+
+  - type: textarea
+    id: desktop-env
+    attributes:
+      label: Desktop Environment
+      description: Your OS and environment details.
+      value: |
+        - OS: [e.g. Linux (Arch / Ubuntu / Fedora) / Windows 10/11]
+        - Display Server: [e.g. Wayland / X11] (if Linux)
+        - Package / Install type: [e.g. AppImage / DEB / AUR / source]
+        - App Version:
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console Logs
+      description: Paste  logs copied from settings > about or riff.log in logs folder
+      render: text
