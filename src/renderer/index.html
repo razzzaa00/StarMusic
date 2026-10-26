@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Riff</title>
+  <title>StarMusic</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Google+Sans+Text:wght@400;500;700&display=swap" rel="stylesheet">
@@ -36,7 +36,7 @@
 
   <header class="titlebar" id="titlebar">
     <div class="titlebar-drag">
-      <div class="app-logo" aria-label="Riff"><span class="titlebar-riff-icon"></span></div>
+      <div class="app-logo" aria-label="StarMusic"><span class="titlebar-riff-icon"></span></div>
     </div>
     <div class="titlebar-controls">
       <button class="titlebar-btn" id="btn-mini-lyrics" title="Lyrics" aria-label="Lyrics">
@@ -104,7 +104,7 @@
 
         <button class="nav-item active" data-view="discover" id="nav-discover" title="Home">
           <div class="nav-indicator">
-            <img id="nav-home-app-icon" class="nav-home-app-icon" src="../../assets/02-editor.svg" alt="Home" draggable="false" />
+            <img id="nav-home-app-icon" class="nav-home-app-icon" src="../../assets/00-starmusic.svg" alt="Home" draggable="false" />
           </div>
         </button>
 
@@ -903,8 +903,8 @@
                   <div style="display: flex; flex-direction: column; gap: 4px;">
                     <div class="settings-section-title">Custom themes</div>
                     <div style="font-size: calc(12px * var(--font-scale, 1)); color: var(--md-sys-color-on-surface-variant); font-weight: normal; line-height: 1.4;">
-                      Add a .css file to restyle Riff.<br>
-                      Tip: Riff sets its color variables from JavaScript, so a theme must use !important to override them (for example --md-sys-color-primary: #ff4081 !important).<br>
+                      Add a .css file to restyle StarMusic.<br>
+                      Tip: StarMusic sets its color variables from JavaScript, so a theme must use !important to override them (for example --md-sys-color-primary: #ff4081 !important).<br>
                       Ctrl+Shift+R turns every custom theme and CSS off if something breaks.
                     </div>
                   </div>
@@ -914,7 +914,7 @@
               </div>
 
               <div class="settings-section" data-cat="plugins">
-                <div class="ct-head"><div><div class="settings-section-title">Plugins</div><div class="setting-hint"><span class="plugins-warn">Plugins are JavaScript files with full access to Riff.</span> Only add plugins you trust. They live in the plugins folder: delete a file and the plugin is gone. Ctrl+Shift+R turns every plugin off.</div></div><div class="ct-actions"><button class="btn-outline-pill" id="btn-plugins-folder">Open folder</button><button class="btn-outline-pill" id="btn-plugins-reload">Reload list</button><button class="btn-pill-primary" id="btn-add-plugin">Add</button></div></div>
+                <div class="ct-head"><div><div class="settings-section-title">Plugins</div><div class="setting-hint"><span class="plugins-warn">Plugins are JavaScript files with full access to StarMusic.</span> Only add plugins you trust. They live in the plugins folder: delete a file and the plugin is gone. Ctrl+Shift+R turns every plugin off.</div></div><div class="ct-actions"><button class="btn-outline-pill" id="btn-plugins-folder">Open folder</button><button class="btn-outline-pill" id="btn-plugins-reload">Reload list</button><button class="btn-pill-primary" id="btn-add-plugin">Add</button></div></div>
                 <div class="ct-list m3-group" id="plugins-list"></div>
               </div>
 
@@ -1458,7 +1458,7 @@
               <div class="setting-item-top" style="align-items: center;">
                 <div style="display: flex; flex-direction: column; gap: 2px;">
                   <span class="setting-name" data-i18n>Show artist in Discord status</span>
-                  <span class="setting-hint" data-i18n>Display "Listening to Artist" instead of "Listening to Riff" in compact profile status</span>
+                  <span class="setting-hint" data-i18n>Display "Listening to Artist" instead of "Listening to StarMusic" in compact profile status</span>
                 </div>
                 <button type="button" class="effect-switch-btn active" id="btn-discord-artist-status"><span class="thumb"></span></button>
               </div>
@@ -1685,7 +1685,7 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                   </div>
                   <div style="display: flex; flex-direction: column;">
-                    <span class="setting-name">Export Riff account (.rfacc)</span>
+                    <span class="setting-name">Export StarMusic account (.rfacc)</span>
                     <span style="font-size: calc(12px * var(--font-scale, 1)); color: var(--md-sys-color-outline);">Backup full library, playlists, settings and history</span>
                   </div>
                 </div>
@@ -1700,7 +1700,7 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                   </div>
                   <div style="display: flex; flex-direction: column;">
-                    <span class="setting-name">Import Riff account (.rfacc)</span>
+                    <span class="setting-name">Import StarMusic account (.rfacc)</span>
                     <span style="font-size: calc(12px * var(--font-scale, 1)); color: var(--md-sys-color-outline);">Restore entire account from encrypted binary backup</span>
                   </div>
                 </div>
@@ -1747,7 +1747,7 @@
                     <div class="setting-item-top" style="align-items: center;">
                       <div style="display: flex; flex-direction: column; gap: 2px;">
                         <span class="setting-name">Allow multiple instances</span>
-                        <span style="font-size: calc(12px * var(--font-scale, 1)); color: var(--md-sys-color-outline);">For testing: lets you start a second Riff window. Applies after restart. The second window uses its own clean profile.</span>
+                        <span style="font-size: calc(12px * var(--font-scale, 1)); color: var(--md-sys-color-outline);">For testing: lets you start a second StarMusic window. Applies after restart. The second window uses its own clean profile.</span>
                       </div>
                       <button class="effect-switch-btn" id="btn-multi-instance"><span class="thumb"></span></button>
                     </div>
@@ -1904,10 +1904,10 @@
                       </button>
                       <button type="button" class="theme-mode-btn" id="home-layout-riff" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
                         <img src="../../assets/icon.png" width="16" height="16" style="border-radius: 4px; object-fit: contain;" alt="">
-                        <span>Riff</span>
+                        <span>StarMusic</span>
                       </button>
                     </div>
-                    <div style="font-size: calc(12px * var(--font-scale, 1)); color: var(--md-sys-color-outline); margin-top: 6px;">Spotify: rows of mixes and quick access. Riff: the carousel.</div>
+                    <div style="font-size: calc(12px * var(--font-scale, 1)); color: var(--md-sys-color-outline); margin-top: 6px;">Spotify: rows of mixes and quick access. StarMusic: the carousel.</div>
                   </div>
 
                   <div class="setting-item">
@@ -1958,17 +1958,17 @@
                   <span class="riff-hero-logo-main"></span>
                 </div>
               </div>
-              <span class="riff-hero-title">Riff</span>
+              <span class="riff-hero-title">StarMusic</span>
             </div>
             <div class="m3-group">
             <div class="setting-item">
               <div class="setting-item-top" style="align-items: center; justify-content: space-between;">
                 <div style="display: flex; align-items: center; gap: 12px;">
                   <div style="width: 32px; height: 32px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;">
-                    <img src="../../assets/icon.png" alt="Riff" style="width: 32px; height: 32px; object-fit: cover;">
+                    <img src="../../assets/icon.png" alt="StarMusic" style="width: 32px; height: 32px; object-fit: cover;">
                   </div>
                   <div style="display: flex; flex-direction: column;">
-                    <span class="setting-name">Riff</span>
+                    <span class="setting-name">StarMusic</span>
                     <span id="about-version" style="font-size: calc(12px * var(--font-scale, 1)); color: var(--md-sys-color-outline);">Version 43.0.0</span>
                   </div>
                 </div>
@@ -2004,9 +2004,9 @@
               <svg class="settings-credits-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .4z"/>
               </svg>
-              Riff made by rootless, support me: <a href="https://t.me/riffplayer" target="_blank" rel="noopener">t.me/riffplayer</a>
+              StarMusic, based on <a href="https://github.com/rootscripts/riff" target="_blank" rel="noopener">Riff</a> by rootless (MIT)
             </span>
-            <span class="settings-version-tag">v43.0.0</span>
+            <span class="settings-version-tag">v1.0.0</span>
           </div>
             </div>
           </div>
@@ -2194,7 +2194,7 @@
       
       <div class="cache-header">
         <h2>Clear Cache</h2>
-        <p>Clear cache and free up your storage, don't do it too often because Riff will get laggy.</p>
+        <p>Clear cache and free up your storage, don't do it too often because StarMusic will get laggy.</p>
       </div>
 
       <div class="cache-stats-container">
@@ -2592,7 +2592,7 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
-      <p id="tools-modal-desc" style="margin: 0; color: var(--md-sys-color-on-surface-variant); font-size: calc(13px * var(--font-scale, 1)); line-height: 1.4;">Riff needs yt-dlp and ffmpeg to play and save tracks (~400 MB).</p>
+      <p id="tools-modal-desc" style="margin: 0; color: var(--md-sys-color-on-surface-variant); font-size: calc(13px * var(--font-scale, 1)); line-height: 1.4;">StarMusic needs yt-dlp and ffmpeg to play and save tracks (~400 MB).</p>
 
       <div class="tools-list" style="display: flex; flex-direction: column; gap: 10px; margin-top: 6px;">
         <div class="tools-row" id="tools-row-ytdlp" style="background: var(--md-sys-color-surface-container); border-radius: var(--md-shape-corner-m); padding: 12px 16px; display: flex; flex-direction: column; gap: 8px;">
@@ -2749,7 +2749,7 @@
             <line x1="12" y1="9" x2="12" y2="13"></line>
             <line x1="12" y1="17" x2="12.01" y2="17"></line>
           </svg>
-          <span>We don't steal anything, and Riff is open-source. Want to import everything? Use the export files (or log in, if you set that up). Want zero risk? Import a single playlist by link instead.</span>
+          <span>We don't steal anything, and StarMusic is open-source. Want to import everything? Use the export files (or log in, if you set that up). Want zero risk? Import a single playlist by link instead.</span>
         </div>
       </div>
       <div class="sp-pane hidden" data-mode="login">
@@ -2775,7 +2775,7 @@
             <line x1="12" y1="9" x2="12" y2="13"></line>
             <line x1="12" y1="17" x2="12.01" y2="17"></line>
           </svg>
-          <span>We don't steal anything, and Riff is open-source. Want to import everything? Use the export files (or log in, if you set that up). Want zero risk? Import a single playlist by link instead.</span>
+          <span>We don't steal anything, and StarMusic is open-source. Want to import everything? Use the export files (or log in, if you set that up). Want zero risk? Import a single playlist by link instead.</span>
         </div>
       </div>
       <div id="spotify-import-progress-wrap" class="hidden" style="margin-bottom: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
@@ -2848,7 +2848,7 @@
             <line x1="12" y1="9" x2="12" y2="13"></line>
             <line x1="12" y1="17" x2="12.01" y2="17"></line>
           </svg>
-          <span>We don't steal anything, and Riff is open-source. Want to import everything? Use the export files. Want zero risk? Import a single playlist by link instead.</span>
+          <span>We don't steal anything, and StarMusic is open-source. Want to import everything? Use the export files. Want zero risk? Import a single playlist by link instead.</span>
         </div>
       </div>
       <div id="apple-import-progress-wrap" class="hidden" style="margin-bottom: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
@@ -2935,7 +2935,7 @@
             <line x1="12" y1="9" x2="12" y2="13"></line>
             <line x1="12" y1="17" x2="12.01" y2="17"></line>
           </svg>
-          <span>We don't steal anything, and Riff is open-source. Want zero risk? Import a single playlist by link instead.</span>
+          <span>We don't steal anything, and StarMusic is open-source. Want zero risk? Import a single playlist by link instead.</span>
         </div>
       </div>
       <div id="link-import-progress-wrap" class="hidden" style="margin-bottom: 16px; display: flex; flex-direction: column; align-items: center; gap: 8px;">

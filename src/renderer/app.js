@@ -13696,6 +13696,7 @@ function bindCoverHoldZoom(wrapEl) {
   }
 
   const RIFF_APP_ICONS = [
+    { id: '00-starmusic.svg', label: 'StarMusic' },
     { id: '01-default.svg', label: 'Default' },
     { id: '02-editor.svg', label: 'Editor' },
     { id: '03-orbit.svg', label: 'Orbit' },
@@ -13709,12 +13710,12 @@ function bindCoverHoldZoom(wrapEl) {
     { id: '12-invincible.svg', label: 'Invincible' }
   ];
   function resolveAppIconSrc(val) {
-    if (!val) return '../../assets/02-editor.svg';
+    if (!val) return '../../assets/00-starmusic.svg';
     if (val.startsWith('file:') || val.startsWith('http') || val.startsWith('data:')) return val;
     return '../../assets/' + val.replace(/^.*assets\//, '');
   }
   function applyHomeAppIcon(val) {
-    const chosen = val || localStorage.getItem('riff_app_icon') || '02-editor.svg';
+    const chosen = val || localStorage.getItem('riff_app_icon') || '00-starmusic.svg';
     localStorage.setItem('riff_app_icon', chosen);
     const homeImg = document.getElementById('nav-home-app-icon');
     if (homeImg) homeImg.src = resolveAppIconSrc(chosen);
@@ -13727,7 +13728,7 @@ function bindCoverHoldZoom(wrapEl) {
   }
   function initAppIconPicker() {
     const grid = document.getElementById('app-icon-picker-grid');
-    const saved = localStorage.getItem('riff_app_icon') || '02-editor.svg';
+    const saved = localStorage.getItem('riff_app_icon') || '00-starmusic.svg';
     if (grid) {
       grid.innerHTML = '';
       RIFF_APP_ICONS.forEach(item => {
@@ -14537,7 +14538,7 @@ function bindCoverHoldZoom(wrapEl) {
       sameTrack: (a, b) => isSameTrack(a, b),
       shuffle: {
         // fn({ queue, queueIndex, context, current }) -> track | Promise<track> | null.
-        // Returning null/undefined falls back to Riff's default random pick.
+        // Returning null/undefined falls back to StarMusic's default random pick.
         setProvider(fn) {
           shuffleProvider = typeof fn === 'function' ? { fn, file: p.file } : null;
           return () => { if (shuffleProvider && shuffleProvider.file === p.file) shuffleProvider = null; };
@@ -14606,7 +14607,7 @@ function bindCoverHoldZoom(wrapEl) {
     document.querySelectorAll(`style[data-plugin="${p.file}"]`).forEach((n) => n.remove());
     const hadStop = !!(entry && entry.stop);
     loadedPlugins.delete(p.file);
-    if (!silent && !hadStop) showToast(`Restart Riff to fully unload "${p.name}"`, 'info');
+    if (!silent && !hadStop) showToast(`Restart StarMusic to fully unload "${p.name}"`, 'info');
   }
   let pluginsCache = [];
   function renderPluginCards() {
@@ -14869,7 +14870,7 @@ function bindCoverHoldZoom(wrapEl) {
       const btnConfirm = document.getElementById('btn-confirm-spotify-import');
       if (btnConfirm) btnConfirm.click();
     }
-    showToast('Welcome to Riff!', 'info');
+    showToast('Welcome to StarMusic!', 'info');
   }
   if (window.electronAPI && window.electronAPI.onWelcomeResult) window.electronAPI.onWelcomeResult((d) => applyWelcomeResult(d));
 
@@ -15407,7 +15408,7 @@ function bindCoverHoldZoom(wrapEl) {
     const $ = (id) => document.getElementById(id);
     const modal = $('update-modal'), title = $('update-title'), text = $('update-text'), bar = $('update-progress');
     const nowB = $('btn-update-now'), laterB = $('btn-update-later'), ignoreB = $('btn-update-ignore');
-    let currentAppVersion = '43.0.0';
+    let currentAppVersion = '1.0.0';
     if (api && api.getAppVersion) {
       api.getAppVersion().then((v) => {
         if (v) {
@@ -15428,7 +15429,7 @@ function bindCoverHoldZoom(wrapEl) {
     const originalBtnHtml = btn ? btn.innerHTML : 'Check for updates';
     let manualUpdateCheck = false;
     let checkTimeoutId = null;
-    let fallbackReleaseUrl = 'https://github.com/rootscripts/riff/releases/latest';
+    let fallbackReleaseUrl = 'https://github.com/razzzaa00/starmusic/releases/latest';
     let canNativeInstall = false;
 
     function restoreButton() {
@@ -15458,8 +15459,8 @@ function bindCoverHoldZoom(wrapEl) {
     function showUpdateModal(d) {
       if (!modal) return;
       canNativeInstall = !!d.canInstall;
-      fallbackReleaseUrl = d.htmlUrl || d.url || 'https://github.com/rootscripts/riff/releases/latest';
-      if (title) title.textContent = 'Riff ' + d.version + ' is available';
+      fallbackReleaseUrl = d.htmlUrl || d.url || 'https://github.com/razzzaa00/starmusic/releases/latest';
+      if (title) title.textContent = 'StarMusic ' + d.version + ' is available';
       if (bar) { bar.classList.add('hidden'); if (bar.firstElementChild) bar.firstElementChild.style.width = '0'; }
       if (nowB) {
         nowB.disabled = false;
@@ -15488,13 +15489,13 @@ function bindCoverHoldZoom(wrapEl) {
           showToast('Could not check for updates', 'error');
           return;
         }
-        const res = await fetch('https://api.github.com/repos/rootscripts/riff/releases/latest', {
-          headers: { 'User-Agent': 'Riff-Player' }
+        const res = await fetch('https://api.github.com/repos/razzzaa00/starmusic/releases/latest', {
+          headers: { 'User-Agent': 'StarMusic-Player' }
         });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const json = await res.json();
         const latestVersion = (json.tag_name || '').replace(/^v/i, '');
-        fallbackReleaseUrl = json.html_url || 'https://github.com/rootscripts/riff/releases/latest';
+        fallbackReleaseUrl = json.html_url || 'https://github.com/razzzaa00/starmusic/releases/latest';
         if (isNewerVersion(latestVersion, currentAppVersion)) {
           showUpdateModal({
             version: latestVersion,
@@ -15505,7 +15506,7 @@ function bindCoverHoldZoom(wrapEl) {
           restoreButton();
         } else {
           restoreButton();
-          showToast('You are using the latest version of Riff!', 'success');
+          showToast('You are using the latest version of StarMusic!', 'success');
         }
       } catch (err) {
         restoreButton();
@@ -15555,7 +15556,7 @@ function bindCoverHoldZoom(wrapEl) {
         const wasManual = manualUpdateCheck;
         restoreButton();
         if (wasManual) {
-          showToast('You are using the latest version of Riff!', 'success');
+          showToast('You are using the latest version of StarMusic!', 'success');
         }
       });
     }
@@ -15576,7 +15577,7 @@ function bindCoverHoldZoom(wrapEl) {
     }
     if (api && api.onUpdateReady) {
       api.onUpdateReady(() => {
-        if (text) text.textContent = 'Update downloaded. It will be installed when you close Riff.';
+        if (text) text.textContent = 'Update downloaded. It will be installed when you close StarMusic.';
         if (nowB) nowB.classList.add('hidden');
         if (laterB) laterB.classList.add('hidden');
       });
@@ -15590,7 +15591,7 @@ function bindCoverHoldZoom(wrapEl) {
           if (laterB) laterB.disabled = true;
           if (text) text.textContent = 'Downloading...';
         } else {
-          window.open(fallbackReleaseUrl || 'https://github.com/rootscripts/riff/releases/latest', '_blank');
+          window.open(fallbackReleaseUrl || 'https://github.com/razzzaa00/starmusic/releases/latest', '_blank');
           if (modal) closeModal(modal);
         }
       });
@@ -15599,7 +15600,7 @@ function bindCoverHoldZoom(wrapEl) {
       laterB.addEventListener('click', () => {
         if (api && api.updateAction) api.updateAction('later');
         if (modal) closeModal(modal);
-        showToast('The update will be installed when you close Riff', 'info');
+        showToast('The update will be installed when you close StarMusic', 'info');
       });
     }
     if (ignoreB) {
@@ -18207,7 +18208,7 @@ function bindCoverHoldZoom(wrapEl) {
       if (typeof showToast === 'function') showToast('No playlists to export', 'error');
       return;
     }
-    let appVer = '43.0.0';
+    let appVer = '1.0.0';
     try {
       if (window.electronAPI && window.electronAPI.getAppVersion) {
         const v = await window.electronAPI.getAppVersion();
@@ -18216,7 +18217,7 @@ function bindCoverHoldZoom(wrapEl) {
     } catch (e) {}
 
     const payload = {
-      app: 'Riff',
+      app: 'StarMusic',
       appVersion: appVer,
       exportedAt: new Date().toISOString(),
       playlists: valid.map(pl => ({
@@ -18382,7 +18383,7 @@ function bindCoverHoldZoom(wrapEl) {
     btnImportJsonPlaylists.addEventListener('click', triggerJsonPlaylistImport);
   }
 
-  function confirmChain({ title = 'Import Riff account', message = 'Importing an account will replace your existing playlists, favorites, custom styles, and settings. Riff will restart immediately.', confirmLabel = 'Import & Restart', seconds = 3 } = {}) {
+  function confirmChain({ title = 'Import StarMusic account', message = 'Importing an account will replace your existing playlists, favorites, custom styles, and settings. StarMusic will restart immediately.', confirmLabel = 'Import & Restart', seconds = 3 } = {}) {
     return new Promise((resolve) => {
       let modal = document.getElementById('confirm-chain-modal');
       if (!modal) {
@@ -18452,7 +18453,7 @@ function bindCoverHoldZoom(wrapEl) {
         }
       } catch (_) {}
       const payload = {
-        app: 'Riff',
+        app: 'StarMusic',
         version: '1.0',
         exportedAt: Date.now(),
         localStorage: dump
@@ -18472,8 +18473,8 @@ function bindCoverHoldZoom(wrapEl) {
   if (btnImportAccount) {
     btnImportAccount.onclick = async () => {
       const confirmed = await confirmChain({
-        title: 'Import Riff account',
-        message: 'Importing an account will replace your existing playlists, favorites, custom styles, and settings. Riff will restart immediately.',
+        title: 'Import StarMusic account',
+        message: 'Importing an account will replace your existing playlists, favorites, custom styles, and settings. StarMusic will restart immediately.',
         confirmLabel: 'Import & Restart',
         seconds: 3
       });
@@ -21573,7 +21574,7 @@ function bindCoverHoldZoom(wrapEl) {
       }
       const move = window.confirm(
         'Move your existing music to the new folder?\n\n' +
-        'OK: move all downloaded and imported files, then restart Riff.\n' +
+        'OK: move all downloaded and imported files, then restart StarMusic.\n' +
         'Cancel: switch to the new folder without moving (files stay in the old one).'
       );
       btnChangeMusicFolder.disabled = true;
@@ -21593,7 +21594,7 @@ function bindCoverHoldZoom(wrapEl) {
         return;
       }
       btnChangeMusicFolder.textContent = 'Restarting...';
-      showToast('Restarting Riff...');
+      showToast('Restarting StarMusic...');
       setTimeout(() => { if (window.electronAPI.restartApp) window.electronAPI.restartApp(); }, 400);
     });
   }

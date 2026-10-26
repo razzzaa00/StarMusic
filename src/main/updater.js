@@ -31,7 +31,7 @@ function initUpdater(getWindow) {
   if (pkg.version) {
     app.setVersion(pkg.version);
   }
-  const releasesUrl = `${pkg.homepage || 'https://github.com/rootscripts/riff'}/releases`;
+  const releasesUrl = `${pkg.homepage || 'https://github.com/razzzaa00/starmusic'}/releases`;
   let manualCheck = false;
   let installNow = false;
   let current = null;
@@ -50,8 +50,8 @@ function initUpdater(getWindow) {
 
   const fallbackFetchGitHub = async () => {
     try {
-      const res = await fetch('https://api.github.com/repos/rootscripts/riff/releases/latest', {
-        headers: { 'User-Agent': 'Riff-Player' }
+      const res = await fetch('https://api.github.com/repos/razzzaa00/starmusic/releases/latest', {
+        headers: { 'User-Agent': 'StarMusic-Player' }
       });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const json = await res.json();

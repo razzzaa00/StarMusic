@@ -26,7 +26,7 @@ function ffmpegAsset() {
 
 function get(url, redirects = 6) {
   return new Promise((resolve, reject) => {
-    https.get(url, { headers: { 'User-Agent': 'Riff' } }, (res) => {
+    https.get(url, { headers: { 'User-Agent': 'StarMusic' } }, (res) => {
       if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location && redirects > 0) {
         res.resume();
         return resolve(get(new URL(res.headers.location, url).toString(), redirects - 1));

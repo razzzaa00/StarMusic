@@ -1,9 +1,9 @@
 {
-  "name": "riff",
-  "version": "43.0.0",
+  "name": "starmusic",
+  "version": "1.0.0",
   "main": "src/main/main.js",
   "bin": {
-    "riff": "src/main/cli.js"
+    "starmusic": "src/main/cli.js"
   },
   "scripts": {
     "start": "electron .",
@@ -14,9 +14,9 @@
     "release:major": "npm version major && git push --follow-tags"
   },
   "keywords": [],
-  "author": "rootscripts",
+  "author": "razzzaa00",
   "license": "MIT",
-  "description": "made for humans, Riff - audio player.",
+  "description": "StarMusic - ad-free, lightweight music player (YouTube Music, SoundCloud, local files). Based on Riff.",
   "devDependencies": {
     "electron": "^41.7.1",
     "electron-builder": "^26.15.3"
@@ -28,18 +28,18 @@
     "hls.js": "^1.7.1",
     "tone": "^15.1.22"
   },
-  "productName": "Riff",
-  "homepage": "https://github.com/rootscripts/riff",
+  "productName": "StarMusic",
+  "homepage": "https://github.com/razzzaa00/starmusic",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rootscripts/riff.git"
+    "url": "git+https://github.com/razzzaa00/starmusic.git"
   },
   "bugs": {
-    "url": "https://github.com/rootscripts/riff/issues"
+    "url": "https://github.com/razzzaa00/starmusic/issues"
   },
   "build": {
-    "appId": "io.github.rootscripts.riff",
-    "productName": "Riff",
+    "appId": "io.github.razzzaa00.starmusic",
+    "productName": "StarMusic",
     "artifactName": "${name}-${version}-${os}-${arch}.${ext}",
     "directories": {
       "output": "dist"
@@ -104,8 +104,8 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "rootscripts",
-        "repo": "riff",
+        "owner": "razzzaa00",
+        "repo": "starmusic",
         "releaseType": "release"
       }
     ]

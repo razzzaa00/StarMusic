@@ -299,7 +299,7 @@ function runGUI() {
     const primaryDisplay = screen.getPrimaryDisplay();
     const scaleFactor = primaryDisplay.scaleFactor;
 
-    app.setAppUserModelId('io.github.rootscripts.riff');
+    app.setAppUserModelId('io.github.razzzaa00.starmusic');
     mainWindow = new BrowserWindow({
       x: initialBounds.x,
       y: initialBounds.y,
@@ -308,7 +308,7 @@ function runGUI() {
       minWidth: 800,
       minHeight: 540,
                                    backgroundColor: firstRun ? '#8d5ef2' : '#000000',
-                                   title: 'Riff',
+                                   title: 'StarMusic',
                                    icon: path.join(__dirname, '../../assets', 'icon.png'),
                                    frame: false,
                                    titleBarStyle: 'hidden',
@@ -446,7 +446,7 @@ function runGUI() {
     });
 
     ipcMain.handle('get-diagnostics', async () => {
-      const lines = [`Riff ${app.getVersion()}`, `OS ${process.platform} ${process.arch} ${os.release()}`, `Electron ${process.versions.electron} Chromium ${process.versions.chrome} Node ${process.versions.node}`, `Locale ${app.getLocale()}`, `Data ${DATA_DIR}`];
+      const lines = [`StarMusic ${app.getVersion()}`, `OS ${process.platform} ${process.arch} ${os.release()}`, `Electron ${process.versions.electron} Chromium ${process.versions.chrome} Node ${process.versions.node}`, `Locale ${app.getLocale()}`, `Data ${DATA_DIR}`];
       for (const name of ['yt-dlp', 'ffmpeg']) {
         const bin = resolveBinary(name);
         lines.push(`${name}: ${bin || 'NOT FOUND'}`);
@@ -787,9 +787,9 @@ function runGUI() {
         try {
           const win = BrowserWindow.fromWebContents(event.sender) || mainWindow;
           const r = await dialog.showSaveDialog(win, {
-            title: 'Export Riff account',
+            title: 'Export StarMusic account',
             defaultPath: 'riff-account.rfacc',
-            filters: [{ name: 'Riff Account (.rfacc)', extensions: ['rfacc'] }]
+            filters: [{ name: 'StarMusic Account (.rfacc)', extensions: ['rfacc'] }]
           });
           if (r.canceled || !r.filePath) return { canceled: true };
           const buffer = encryptAccount(payload || {});
@@ -804,9 +804,9 @@ function runGUI() {
         try {
           const win = BrowserWindow.fromWebContents(event.sender) || mainWindow;
           const r = await dialog.showOpenDialog(win, {
-            title: 'Import Riff account',
+            title: 'Import StarMusic account',
             properties: ['openFile'],
-            filters: [{ name: 'Riff Account (.rfacc)', extensions: ['rfacc'] }]
+            filters: [{ name: 'StarMusic Account (.rfacc)', extensions: ['rfacc'] }]
           });
           if (r.canceled || !r.filePaths || !r.filePaths.length) return { canceled: true };
           const buffer = await fs.promises.readFile(r.filePaths[0]);
@@ -1244,7 +1244,7 @@ function runGUI() {
           let trayIcon = nativeImage.createFromPath(iconPath);
           trayIcon = trayIcon.resize({ width: 22, height: 22 });
           tray = new Tray(trayIcon);
-          tray.setToolTip('Riff');
+          tray.setToolTip('StarMusic');
           const contextMenu = Menu.buildFromTemplate([
             {
               label: 'Show/Hide',

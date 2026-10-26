@@ -685,7 +685,7 @@ async function httpGetJson(url, timeoutMs = 6000) {
     try {
       const parsed = new URL(url);
       const mod = parsed.protocol === 'http:' ? http : https;
-      const req = mod.get(url, { headers: { 'User-Agent': 'Riff' }, timeout: timeoutMs }, (res) => {
+      const req = mod.get(url, { headers: { 'User-Agent': 'StarMusic' }, timeout: timeoutMs }, (res) => {
         if (res.statusCode < 200 || res.statusCode >= 300) {
           res.resume();
           return resolve(null);
@@ -5297,7 +5297,7 @@ async function getSpotifyAccessToken(forceRefresh = false) {
       spotifyAuthError = '';
       if (typeof result.data.refresh_token === 'string' && result.data.refresh_token) {
         spotifyAuth.refreshToken = result.data.refresh_token;
-        if (!saveSpotifyAuth()) spotifyAuthError = 'Spotify login could not be saved securely; reconnect after restarting Riff.';
+        if (!saveSpotifyAuth()) spotifyAuthError = 'Spotify login could not be saved securely; reconnect after restarting StarMusic.';
       }
       return spotifyAuth.token;
     })().finally(() => { spotifyRefreshPromise = null; });
@@ -6036,8 +6036,8 @@ function callLastFmApi(params, secret, method = 'POST') {
       hostname: 'ws.audioscrobbler.com',
       path: reqPath,
       method,
-      headers: isGet ? { 'User-Agent': 'Riff-Desktop-Player/43.0' } : {
-        'User-Agent': 'Riff-Desktop-Player/43.0',
+      headers: isGet ? { 'User-Agent': 'StarMusic-Desktop-Player/1.0' } : {
+        'User-Agent': 'StarMusic-Desktop-Player/1.0',
         'Content-Type': 'application/x-www-form-urlencoded',
         'Content-Length': Buffer.byteLength(bodyData)
       },
@@ -6415,7 +6415,7 @@ const server = http.createServer(async (req, res) => {
       spotifyAuthError = errParam === 'access_denied' ? 'Spotify authorization was denied.' : 'Spotify login failed. Check the Client ID, allowed account and redirect URI.';
       spotifyAuth.state = '';
       res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
-      return res.end('<!DOCTYPE html><html><body><p>Spotify login failed. Return to Riff for details.</p></body></html>');
+      return res.end('<!DOCTYPE html><html><body><p>Spotify login failed. Return to StarMusic for details.</p></body></html>');
     }
     const redirectUri = getSpotifyRedirectUri();
     try {
@@ -6423,7 +6423,7 @@ const server = http.createServer(async (req, res) => {
       const tokenResult = await requestSpotifyToken({ grant_type: 'authorization_code', code, redirect_uri: redirectUri, client_id: spotifyAuth.clientId, code_verifier: spotifyAuth.verifier });
       if (spotifyAuth !== session) {
         res.writeHead(409, { 'Content-Type': 'text/html; charset=utf-8' });
-        return res.end('<!DOCTYPE html><html><body><p>Spotify login session changed. Return to Riff and try again.</p></body></html>');
+        return res.end('<!DOCTYPE html><html><body><p>Spotify login session changed. Return to StarMusic and try again.</p></body></html>');
       }
       spotifyAuth.state = '';
       if (tokenResult.status >= 200 && tokenResult.status < 300 && typeof tokenResult.data?.access_token === 'string' && tokenResult.data.access_token) {
@@ -6431,20 +6431,20 @@ const server = http.createServer(async (req, res) => {
         spotifyAuth.refreshToken = typeof tokenResult.data.refresh_token === 'string' ? tokenResult.data.refresh_token : '';
         spotifyAuth.expiresAt = Date.now() + (Number.isFinite(tokenResult.data.expires_in) && tokenResult.data.expires_in > 0 ? tokenResult.data.expires_in : 3600) * 1000;
         if (!spotifyAuth.refreshToken) spotifyAuthError = 'Spotify did not provide a refresh token; reconnect when this session expires.';
-        else if (!saveSpotifyAuth()) spotifyAuthError = 'Spotify login could not be saved securely; reconnect after restarting Riff.';
+        else if (!saveSpotifyAuth()) spotifyAuthError = 'Spotify login could not be saved securely; reconnect after restarting StarMusic.';
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        return res.end('<!DOCTYPE html><html><body><p>Riff is connected to Spotify. You can close this tab.</p></body></html>');
+        return res.end('<!DOCTYPE html><html><body><p>StarMusic is connected to Spotify. You can close this tab.</p></body></html>');
       } else {
         const reason = tokenResult.data?.error_description || tokenResult.data?.error || `HTTP ${tokenResult.status}`;
         spotifyAuthError = `Spotify token exchange failed: ${reason}`;
         res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
-        return res.end('<!DOCTYPE html><html><body><p>Spotify login failed. Return to Riff for details.</p></body></html>');
+        return res.end('<!DOCTYPE html><html><body><p>Spotify login failed. Return to StarMusic for details.</p></body></html>');
       }
     } catch (err) {
       spotifyAuth.state = '';
       spotifyAuthError = `Could not reach Spotify: ${err.message}`;
       res.writeHead(500, { 'Content-Type': 'text/html; charset=utf-8' });
-      return res.end('<!DOCTYPE html><html><body><p>Spotify login failed. Return to Riff for details.</p></body></html>');
+      return res.end('<!DOCTYPE html><html><body><p>Spotify login failed. Return to StarMusic for details.</p></body></html>');
     }
   }
 
@@ -6876,14 +6876,14 @@ function startServer(port = PORT) {
   return new Promise((resolve, reject) => {
     server.listen(port, '127.0.0.1', () => {
       const p = server.address().port;
-      console.log(`devsize internal server running on http://127.0.0.1:${p}`);
+      console.log(`StarMusic internal server running on http://127.0.0.1:${p}`);
       require('./tools').updateYtDlpIfManaged().catch(() => {});
       resolve(p);
     }).on('error', (err) => {
       if (err.code === 'EADDRINUSE') {
         server.listen(0, '127.0.0.1', () => {
           const p = server.address().port;
-          console.log(`devsize internal server running on fallback port http://127.0.0.1:${p}`);
+          console.log(`StarMusic internal server running on fallback port http://127.0.0.1:${p}`);
           require('./tools').updateYtDlpIfManaged().catch(() => {});
           resolve(p);
         });
