@@ -192,8 +192,40 @@ function cacheSet(map, key, value, max = MAX_CACHE_ENTRIES) {
 
 let currentAppState = {};
 const sseClients = new Set();
-const YT_PLAYER_CLIENTS = ['android', 'tv', 'web_safari', 'ios', null];
-let lastGoodYtClient = null;
+const YT_PLAYER_CLIENTS = ['android', null, 'android_vr', 'tv', 'web_safari', 'ios'];
+const YT_PARALLEL_CLIENTS = 3;
+let lastGoodYtClient;
+
+// Starts the most reliable clients at once and keeps the first stream URL; the rest are fallbacks.
+async function raceYtStreamUrl(trackUrl, format) {
+  const order = lastGoodYtClient === undefined
+    ? YT_PLAYER_CLIENTS
+    : [lastGoodYtClient, ...YT_PLAYER_CLIENTS.filter(c => c !== lastGoodYtClient)];
+  const children = new Set();
+  const attempt = async (client) => {
+    const raw = await executeYtDlp([
+      "--no-config", "-g", "--no-warnings", "--no-playlist", "--no-check-certificates", "--prefer-free-formats",
+      "--socket-timeout", "5", "--retries", "1",
+      ...(client ? ["--extractor-args", "youtube:player_client=" + client] : []),
+      "-f", format,
+      "--", trackUrl
+    ], 9000, { onChild: (p) => children.add(p) });
+    const line = raw.trim().split(String.fromCharCode(10)).map(l => l.trim()).find(l => l.startsWith("http"));
+    if (!line) throw new Error('no stream url');
+    lastGoodYtClient = client;
+    return line;
+  };
+  try {
+    return await Promise.any(order.slice(0, YT_PARALLEL_CLIENTS).map(attempt));
+  } catch (_) {
+  } finally {
+    for (const p of children) { if (p.exitCode === null) { try { p.kill('SIGKILL'); } catch (_) {} } }
+  }
+  for (const client of order.slice(YT_PARALLEL_CLIENTS)) {
+    try { return await attempt(client); } catch (_) {}
+  }
+  return null;
+}
 
 let _bgYtDlpActive = 0;
 const _bgYtDlpQueue = [];
@@ -503,6 +535,33 @@ async function refreshServerScClientId() {
   return serverScClientId;
 }
 
+async function scApiSearch(query, limit = 20) {
+  let cid = serverScClientId;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const r = await fetch(`https://api-v2.soundcloud.com/search/tracks?q=${encodeURIComponent(query)}&limit=${limit}&client_id=${cid}`, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(8000) });
+    if (r.status === 401 || r.status === 403) { cid = await refreshServerScClientId(); continue; }
+    if (!r.ok) return [];
+    const j = await r.json();
+    return (Array.isArray(j && j.collection) ? j.collection : [])
+      .filter(t => t && t.kind === 'track' && t.streamable !== false && t.policy !== 'BLOCK' && t.policy !== 'SNIP')
+      .map(t => {
+        const pm = t.publisher_metadata || {};
+        const art = t.artwork_url || (t.user && t.user.avatar_url) || '';
+        return {
+          id: String(t.id),
+          title: t.title || 'untitled',
+          artist: pm.artist || (t.user && t.user.username) || 'unknown artist',
+          album: pm.album_title || '',
+          duration: Math.round((t.full_duration || t.duration || 0) / 1000),
+          thumbnail: art.replace('-large.', '-t500x500.'),
+          url: normalizeSoundCloudUrl(t.permalink_url || ''),
+          platform: 'soundcloud'
+        };
+      });
+  }
+  return [];
+}
+
 async function resolveScTranscodingServer(trackObj, cid) {
   if (!trackObj || !trackObj.media || !Array.isArray(trackObj.media.transcodings)) return null;
   const list = trackObj.media.transcodings;
@@ -512,7 +571,7 @@ async function resolveScTranscodingServer(trackObj, cid) {
   if (!chosen || !chosen.url) return null;
   const sep = chosen.url.includes('?') ? '&' : '?';
   const auth = trackObj.track_authorization ? `&track_authorization=${encodeURIComponent(trackObj.track_authorization)}` : '';
-  const res = await fetch(`${chosen.url}${sep}client_id=${cid}${auth}`, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+  const res = await fetch(`${chosen.url}${sep}client_id=${cid}${auth}`, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(6000) });
   if (!res.ok) return null;
   const j = await res.json();
   return (j && j.url) ? j.url : null;
@@ -525,7 +584,7 @@ async function fetchDirectSoundCloudStreamServer(scUrlOrId, queryFallback) {
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       if (idMatch && idMatch[1]) {
-        const r = await fetch(`https://api-v2.soundcloud.com/tracks/${idMatch[1]}?client_id=${cid}`, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+        const r = await fetch(`https://api-v2.soundcloud.com/tracks/${idMatch[1]}?client_id=${cid}`, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(6000) });
         if (r.status === 401 || r.status === 403) { cid = await refreshServerScClientId(); continue; }
         if (r.ok) {
           const tObj = await r.json();
@@ -534,7 +593,7 @@ async function fetchDirectSoundCloudStreamServer(scUrlOrId, queryFallback) {
         }
       }
       if (queryFallback) {
-        const sr = await fetch(`https://api-v2.soundcloud.com/search/tracks?q=${encodeURIComponent(queryFallback)}&limit=5&client_id=${cid}`, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+        const sr = await fetch(`https://api-v2.soundcloud.com/search/tracks?q=${encodeURIComponent(queryFallback)}&limit=5&client_id=${cid}`, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(6000) });
         if (sr.status === 401 || sr.status === 403) { cid = await refreshServerScClientId(); continue; }
         if (sr.ok) {
           const sj = await sr.json();
@@ -559,6 +618,14 @@ async function searchSoundcloud(query, limit = 14) {
   }
 
   const searchPromise = (async () => {
+    try {
+      const apiTracks = await scApiSearch(query, limit);
+      if (apiTracks.length > 0) {
+        searchCache.set(cacheKey, apiTracks);
+        setTimeout(() => { searchCache.delete(cacheKey); }, 300000);
+        return apiTracks;
+      }
+    } catch (_) {}
     const args = [
       `scsearch${limit}:${query}`,
       '--dump-single-json',
@@ -1538,24 +1605,22 @@ async function prefetchTrack(trackUrl, trackId, platform) {
       trackUrl = `https://www.youtube.com/watch?v=${cleanId}`;
     }
     if (!isSafeMediaUrl(trackUrl)) return;
-    const args = [
-      '--no-config',
-      '-g',
-      '--no-warnings',
-      '--no-playlist',
-      '--no-check-certificates',
-      '--prefer-free-formats',
-      '-f',
-      'bestaudio/best'
-    ];
-    if (platform === 'youtube') {
-      args.push('--extractor-args', 'youtube:player_client=android');
+    const isYt = platform === 'youtube' || platform === 'ytmusic' || /youtube\.com|youtu\.be/.test(trackUrl);
+    const resolving = (async () => {
+      if (isYt) return raceYtStreamUrl(trackUrl, 'bestaudio/best/18');
+      const raw = await executeYtDlp([
+        '--no-config', '-g', '--no-warnings', '--no-playlist', '--no-check-certificates', '--prefer-free-formats',
+        '-f', 'bestaudio/best', '--', trackUrl
+      ], 18000);
+      return raw.trim().split('\n').find(l => l.startsWith('http')) || null;
+    })();
+    streamInfoInflight.set(cacheKey, resolving);
+    let streamUrl;
+    try {
+      streamUrl = await resolving;
+    } finally {
+      if (streamInfoInflight.get(cacheKey) === resolving) streamInfoInflight.delete(cacheKey);
     }
-    args.push('--', trackUrl);
-
-    const raw = await executeYtDlp(args, 18000);
-    const lines = raw.trim().split('\n').filter(l => l.startsWith('http'));
-    const streamUrl = lines[0];
 
     if (streamUrl) {
       const isHls = streamUrl.includes('.m3u8');
@@ -1854,7 +1919,7 @@ async function handleSearch(req, res, query, platform = 'youtube', limit = 20) {
           const entries = await Promise.all(songs.map(async (s) => {
             ytArtistCache.set(s.id, s.artist);
             const isCached = await findCachedFile(s.id);
-            return { id: s.id, title: s.title, artist: s.artist, duration: s.duration, thumbnail: s.thumbnail, url: `https://www.youtube.com/watch?v=${s.id}`, platform: 'youtube', isCached: !!isCached, isExplicit: !!s.isExplicit };
+            return { id: s.id, title: s.title, artist: s.artist, album: s.album || '', duration: s.duration, thumbnail: s.thumbnail, url: `https://www.youtube.com/watch?v=${s.id}`, platform: 'youtube', source: 'ytmusic', isCached: !!isCached, isExplicit: !!s.isExplicit };
           }));
           const result = { success: true, tracks: entries };
           searchCache.set(cacheKey, result);
@@ -1952,6 +2017,7 @@ async function handleSearch(req, res, query, platform = 'youtube', limit = 20) {
           thumbnail: thumbnail,
           url: `https://www.youtube.com/watch?v=${item.id}`,
           platform: 'youtube',
+          source: 'ytmusic',
           isCached: !!isCached,
           isExplicit: Boolean(isTextExplicit(titleVal) || (item.age_limit && item.age_limit >= 18))
         };
@@ -1985,6 +2051,18 @@ async function handleSearch(req, res, query, platform = 'youtube', limit = 20) {
       } catch (_) {}
       return sendResponse(200, { success: false, tracks: [], error: 'YouTube Music is unavailable' });
     }
+  }
+
+  if (platform === 'soundcloud') {
+    try {
+      const apiTracks = await scApiSearch(query, limit);
+      if (apiTracks.length > 0) {
+        const entries = await Promise.all(apiTracks.map(async (t) => ({ ...t, isCached: !!(await findCachedFile(t.id)) })));
+        const result = { success: true, tracks: entries };
+        searchCache.set(cacheKey, result);
+        return sendResponse(200, result);
+      }
+    } catch (_) {}
   }
 
   const prefix = platform === 'soundcloud' ? `scsearch${limit}:` : `ytsearch${limit}:`;
@@ -2223,29 +2301,12 @@ async function handleStreamInfo(req, res, trackUrl, trackId, platform = 'youtube
 
     if (isSafeMediaUrl(trackUrl)) {
       if (isYt) {
-        const clients = lastGoodYtClient
-          ? [lastGoodYtClient, ...YT_PLAYER_CLIENTS.filter(c => c !== lastGoodYtClient)]
-          : YT_PLAYER_CLIENTS;
-        for (const client of clients) {
-          if (streamUrl) break;
-          try {
-            const args = [
-              "--no-config", "-g", "--no-warnings", "--no-playlist", "--no-check-certificates", "--prefer-free-formats",
-              "--socket-timeout", "5", "--retries", "1",
-              ...(client ? ["--extractor-args", "youtube:player_client=" + client] : []),
-              "-f", (forShare ? audioFormat : "bestaudio/best/18"),
-              "--", trackUrl
-            ];
-            const raw = await executeYtDlp(args, 7000);
-            const lines = raw.trim().split(String.fromCharCode(10)).map(l => l.trim()).filter(l => l.startsWith("http"));
-            if (lines.length > 0) {
-              streamUrl = lines[0];
-              lastGoodYtClient = client;
-            }
-          } catch (e) {}
-        }
+        streamUrl = await raceYtStreamUrl(trackUrl, forShare ? audioFormat : "bestaudio/best/18");
       } else {
-        try {
+        if (isSc && !forShare) {
+          try { streamUrl = await fetchDirectSoundCloudStreamServer(/^\d{6,}$/.test(cleanId || '') ? cleanId : trackUrl, ''); } catch (_) {}
+        }
+        if (!streamUrl) try {
           const args = [
             "--no-config", "-g", "--no-warnings", "--no-playlist", "--no-check-certificates", "--prefer-free-formats",
             "--socket-timeout", "5", "--retries", "1",
