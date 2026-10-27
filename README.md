@@ -14,6 +14,7 @@ StarMusic est un fork de [Riff](https://github.com/rootscripts/riff) (licence MI
 - **Paroles synchronisées** (karaoké, fichiers LRC, traduction).
 - **Téléchargement hors-ligne** en MP3, FLAC, Opus ou WAV.
 - **Réglages complets** : thèmes, couleurs, polices, visualiseurs, CSS personnalisé, plugins, Discord Rich Presence.
+- **Interface minimale** : noir uni, une seule couleur d'accent, animations courtes en fondu (respecte le réglage « réduire les animations » du système).
 - Pas de télémétrie : tout est stocké en local.
 
 ## Installer

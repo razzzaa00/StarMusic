@@ -1,0 +1,414 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* StarMusic minimal skin, layered over the Riff base styles. */
+
+:root {
+  --sm-accent: #ff3d7f;
+  --sm-on-accent: #ffffff;
+  --sm-line: color-mix(in srgb, var(--md-sys-color-on-surface-solid, #e6e6e8) 8%, transparent);
+  --sm-hover: color-mix(in srgb, var(--md-sys-color-on-surface-solid, #e6e6e8) 6%, transparent);
+  --sm-press: color-mix(in srgb, var(--md-sys-color-on-surface-solid, #e6e6e8) 10%, transparent);
+  --sm-radius: 8px;
+  --sm-radius-lg: 12px;
+  --sm-ease: cubic-bezier(0.2, 0, 0, 1);
+
+  --md-shape-corner-l: 10px;
+  --md-shape-corner-xl: 14px;
+  --transition-m3: 180ms var(--sm-ease);
+  --transition-emphasized: 200ms var(--sm-ease);
+  --transition-jelly: 160ms var(--sm-ease);
+}
+
+body:not(.intensity-zero) {
+  --sm-accent: var(--md-sys-color-primary);
+  --sm-on-accent: var(--md-sys-color-on-primary);
+}
+
+body {
+  letter-spacing: -0.005em;
+}
+
+/* Layout: flush panes separated by hairlines instead of floating rounded cards */
+
+.app-layout {
+  gap: 0;
+  padding: 0;
+  border-top: 1px solid var(--sm-line);
+}
+
+.sidebar {
+  border-radius: 0;
+  background: transparent;
+  border-right: 1px solid var(--sm-line);
+  width: 64px;
+  padding: 12px 0;
+  gap: 8px;
+}
+
+.main-content {
+  border-radius: 0;
+  background: transparent;
+}
+
+.right-panel {
+  border-radius: 0;
+  background: transparent;
+  border-left: 1px solid var(--sm-line);
+}
+
+.playbar {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 0 !important;
+  border-top: 1px solid var(--sm-line);
+  background: var(--md-sys-color-background-solid, #121214) !important;
+}
+
+:root {
+  --playbar-space: 98px !important;
+}
+
+.playbar-left {
+  padding-left: 16px;
+  gap: 12px;
+}
+
+.playbar-left .track-meta {
+  min-width: 120px;
+}
+
+#btn-edit-current-track,
+#btn-playbar-share {
+  display: none !important;
+}
+
+/* Navigation rail: thin accent bar instead of a filled pill */
+
+.nav-active-indicator {
+  width: 3px !important;
+  left: 0 !important;
+  margin-left: 0 !important;
+  border-radius: 0 3px 3px 0 !important;
+  background: var(--sm-accent) !important;
+}
+
+.nav-item {
+  transition: color 120ms var(--sm-ease);
+}
+
+.nav-item.active,
+.nav-item.active svg {
+  color: var(--md-sys-color-on-surface-solid, #fff) !important;
+}
+
+.nav-item:not(.active) {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* Top bar */
+
+.search-box,
+.view-search-box {
+  border-radius: var(--sm-radius);
+  background: transparent;
+  border: 1px solid var(--sm-line);
+}
+
+.search-box:focus-within,
+.view-search-box:focus-within {
+  border-color: color-mix(in srgb, var(--sm-accent) 60%, transparent);
+}
+
+.platform-pill-switch {
+  border-radius: var(--sm-radius);
+  background: transparent;
+  padding: 0;
+  gap: 2px;
+}
+
+.platform-btn {
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+.platform-btn.active {
+  background: var(--sm-press) !important;
+  color: var(--md-sys-color-on-surface-solid, #fff) !important;
+}
+
+/* Lists */
+
+.track-row {
+  border-radius: var(--sm-radius);
+  padding: 8px 12px;
+  animation: sm-fade 160ms var(--sm-ease) backwards;
+}
+
+.track-row:hover {
+  background: var(--sm-hover);
+}
+
+/* Buttons: quiet icon buttons, one accent action */
+
+.btn-icon-pill {
+  background: transparent !important;
+  border-radius: var(--sm-radius) !important;
+}
+
+.btn-icon-pill:hover {
+  background: var(--sm-hover) !important;
+}
+
+.btn-outline-pill {
+  border-radius: var(--sm-radius);
+  background: transparent;
+  border: 1px solid var(--sm-line);
+}
+
+.btn-outline-pill:hover {
+  background: var(--sm-hover);
+}
+
+.btn-play-pause {
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
+  border-radius: 50% !important;
+  background: var(--sm-accent);
+  color: var(--sm-on-accent);
+  transition: background-color 120ms var(--sm-ease), opacity 120ms var(--sm-ease);
+}
+
+/* Player bar artwork: plain square thumbnail */
+
+.artwork-wrapper,
+body:not(.m3-cover-on) .m3c-wrap {
+  width: 52px;
+  height: 52px;
+  margin-top: 0;
+  filter: none;
+  border-radius: 6px;
+}
+
+.artwork-wrapper .track-artwork,
+.m3c-wrap > img,
+.artwork-fallback {
+  border-radius: 6px !important;
+}
+
+.track-artwork[src=""],
+.track-artwork:not([src]) {
+  visibility: hidden !important;
+}
+
+.artwork-fallback {
+  position: absolute;
+  inset: 0;
+  background: var(--sm-hover);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* Sliders: thin track, small round thumb shown on hover */
+
+.sl-active,
+.sl-inactive {
+  top: 12px;
+  height: 4px;
+  border-radius: 2px !important;
+}
+
+.sl-active {
+  width: calc(100% * var(--v));
+  background: var(--md-sys-color-on-surface-solid, #e6e6e8);
+}
+
+.sl-inactive {
+  width: calc(100% - 100% * var(--v));
+  background: color-mix(in srgb, var(--md-sys-color-on-surface-solid, #e6e6e8) 16%, transparent);
+}
+
+.sl:hover .sl-active {
+  background: var(--sm-accent);
+}
+
+.sl input[type="range"]::-webkit-slider-thumb {
+  width: 12px;
+  height: 12px;
+  margin-top: 8px;
+  border-radius: 50%;
+  background: var(--md-sys-color-on-surface-solid, #fff);
+  opacity: 0;
+  transition: opacity 120ms var(--sm-ease);
+}
+
+.sl:hover input[type="range"]::-webkit-slider-thumb,
+.sl input[type="range"]:active::-webkit-slider-thumb {
+  width: 12px;
+  opacity: 1;
+}
+
+/* Side drawers (playlists, presets): solid panel, no blur */
+
+.rail-drawer {
+  left: 64px;
+  background: var(--md-sys-color-background-solid, #121214);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-radius: 0;
+  border-right: 1px solid var(--sm-line);
+}
+
+/* Lyrics panel actions */
+
+.lyrics-action-btn {
+  background-color: transparent !important;
+  border-radius: var(--sm-radius) !important;
+}
+
+.lyrics-action-btn:hover {
+  background-color: var(--sm-hover) !important;
+}
+
+/* Floating surfaces: solid, hairline border, no frosted glass */
+
+.track-context-menu,
+.m3-dropdown-menu,
+.audio-menu-card,
+.modal-backdrop .settings-card,
+.liquid-surface {
+  background: var(--md-sys-color-surface-container-solid, #1e1f22) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid var(--sm-line) !important;
+  border-radius: var(--sm-radius-lg) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+.modal-backdrop {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.track-context-menu {
+  padding: 4px;
+}
+
+.track-context-menu > * {
+  border-radius: 6px;
+}
+
+/* Settings and audio tabs */
+
+.settings-nav-btn.active,
+.audio-tab.active,
+:is(.settings-nav-btn, .audio-tab):is(.active, :active, .pressed) {
+  background: var(--sm-press) !important;
+  color: var(--md-sys-color-on-surface-solid, #fff) !important;
+  border-radius: var(--sm-radius) !important;
+  animation: none !important;
+  transform: none !important;
+}
+
+.settings-nav-btn.active svg,
+.audio-tab.active svg {
+  color: var(--sm-accent) !important;
+}
+
+.settings-nav-btn.active :not(svg):not(svg *),
+.audio-tab.active :not(svg):not(svg *) {
+  color: inherit !important;
+}
+
+/* Motion: short fades, no overshoot, no blur-in */
+
+@keyframes sm-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+:root {
+  --group-outer: 12px;
+  --liquid-open-dur: 160ms;
+  --liquid-close-dur: 120ms;
+  --liquid-spring-ease: var(--sm-ease);
+  --liquid-retract-ease: ease-in;
+}
+
+:is(.btn-pill-primary, .btn-outline-pill, .chip-btn, .preset-chip, .theme-mode-btn) {
+  border-radius: var(--sm-radius);
+}
+
+/* Same keyframe names as the base styles, so every existing use gets the quiet version */
+
+@keyframes m3FadeUp {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes m3ContainerOpen {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes m3ContainerClose {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes m3-sidebar-tab-jelly {
+  from { transform: none; }
+  to { transform: none; }
+}
+
+@keyframes settingsIn {
+  from { opacity: 0; }
+}
+
+@keyframes tvk-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes tvk-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes liquidPullX {
+  from { opacity: 0; transform: scale(0.98); border-radius: var(--liquid-end-radius, var(--liquid-target-radius, 12px)); }
+  to { opacity: 1; transform: none; border-radius: var(--liquid-end-radius, var(--liquid-target-radius, 12px)); }
+}
+
+@keyframes liquidPullY {
+  from { opacity: 0; transform: translateY(-4px); border-radius: var(--liquid-end-radius, var(--liquid-target-radius, 12px)); }
+  to { opacity: 1; transform: none; border-radius: var(--liquid-end-radius, var(--liquid-target-radius, 12px)); }
+}
+
+@keyframes liquidRetractX {
+  from { opacity: 1; }
+  to { opacity: 0; transform: scale(0.98); }
+}
+
+@keyframes liquidRetractY {
+  from { opacity: 1; }
+  to { opacity: 0; transform: translateY(-4px); }
+}
+
+.ripple {
+  display: none !important;
+}
+
+.content-view.active {
+  animation: sm-fade 180ms var(--sm-ease) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}

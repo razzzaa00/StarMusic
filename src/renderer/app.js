@@ -108,6 +108,23 @@ try { window.electronAPI.storageSaveSync(diskMap); } catch (_) {}
 });
 })();
 
+(function applyStarMusicDefaults() {
+  const defaults = {
+    riff_font: 'inter',
+    riff_m3_cover: '0',
+    riff_wavy_progress: 'false',
+    riff_progress_bg: 'true',
+    riff_bar_wave: '0',
+    riff_adv_cover_bg: 'false',
+    riff_adv_banners: 'false'
+  };
+  try {
+    for (const [key, value] of Object.entries(defaults)) {
+      if (localStorage.getItem(key) === null) localStorage.setItem(key, value);
+    }
+  } catch (_) {}
+})();
+
 (() => {
   try {
     if (typeof window === 'undefined' || window.__riffFetchPatched) return;
@@ -595,6 +612,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const savedSound = loadSoundSettings();
 
+  const INTER_FONT_STACK = `'Inter', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`;
   const SF_FONT_STACK = `-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif`;
 
   function ensureSfFontLoaded() {
@@ -608,11 +626,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function applyFont(font) {
-    const f = (typeof font === 'string' && font) ? font : (localStorage.getItem('riff_font') || 'google');
+    const f = (typeof font === 'string' && font) ? font : (localStorage.getItem('riff_font') || 'inter');
     if (typeof state !== 'undefined' && state) {
       state.riffFont = f;
     }
-    if (f === 'sf') {
+    if (f === 'inter') {
+      document.documentElement.style.setProperty('--font-family', INTER_FONT_STACK);
+    } else if (f === 'sf') {
       ensureSfFontLoaded();
       document.documentElement.style.setProperty('--font-family', SF_FONT_STACK);
     } else if (f === 'system') {
@@ -620,9 +640,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
       document.documentElement.style.removeProperty('--font-family');
     }
+    const fontOptInter = document.getElementById('font-opt-inter');
     const fontOptGoogle = document.getElementById('font-opt-google');
     const fontOptSf = document.getElementById('font-opt-sf');
     const fontOptSystem = document.getElementById('font-opt-system');
+    if (fontOptInter) fontOptInter.classList.toggle('active', f === 'inter');
     if (fontOptGoogle) fontOptGoogle.classList.toggle('active', f === 'google');
     if (fontOptSf) fontOptSf.classList.toggle('active', f === 'sf');
     if (fontOptSystem) fontOptSystem.classList.toggle('active', f === 'system');
@@ -693,7 +715,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                           lastBroadcastStateKey: null,
                           syncTimeout: null,
                           scrubberDragTargetTime: undefined,
-                          riffFont: localStorage.getItem('riff_font') || 'google'
+                          riffFont: localStorage.getItem('riff_font') || 'inter'
   };
 
   function migrateAddedAt() {
@@ -1172,7 +1194,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   let animationFrameId = null;
   function refreshCachedThemeColors() {
     const rootStyle = getComputedStyle(document.documentElement);
-    cachedPrimaryColor = rootStyle.getPropertyValue('--md-sys-color-primary').trim() || '#6750A4';
+    const accent = document.body ? getComputedStyle(document.body).getPropertyValue('--sm-accent').trim() : '';
+    cachedPrimaryColor = accent || rootStyle.getPropertyValue('--md-sys-color-primary').trim() || '#6750A4';
     cachedDimColor = rootStyle.getPropertyValue('--md-sys-color-on-surface').trim() || '#E6E0E9';
     hasDrawnPausedFrame = false;
   }
@@ -2949,9 +2972,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           const showProgressBg = localStorage.getItem('riff_progress_bg') === 'true';
           if (showProgressBg && bgStartX < bgEndX - 1) {
             sCtx.save();
-            sCtx.globalAlpha = 0.3;
+            sCtx.globalAlpha = 0.18;
             sCtx.beginPath();
-            sCtx.lineWidth = 11;
+            sCtx.lineWidth = 4;
             sCtx.lineCap = 'round';
             sCtx.strokeStyle = dimColor;
             sCtx.moveTo(bgStartX, centerY);
@@ -2962,7 +2985,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
           if (waveEnd > waveStart) {
             sCtx.beginPath();
-            sCtx.lineWidth = 9.5;
+            sCtx.lineWidth = 4;
             sCtx.lineCap = 'round';
             sCtx.lineJoin = 'round';
             sCtx.strokeStyle = primaryColor;
@@ -12692,11 +12715,13 @@ function bindCoverHoldZoom(wrapEl) {
     });
   }
 
+  const fontOptInter = document.getElementById('font-opt-inter');
   const fontOptGoogle = document.getElementById('font-opt-google');
   const fontOptSf = document.getElementById('font-opt-sf');
   const fontOptSystem = document.getElementById('font-opt-system');
 
   [
+    { btn: fontOptInter, key: 'inter' },
     { btn: fontOptGoogle, key: 'google' },
     { btn: fontOptSf, key: 'sf' },
     { btn: fontOptSystem, key: 'system' }

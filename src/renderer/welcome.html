@@ -6,27 +6,27 @@
   <title>Welcome to StarMusic - Setup</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      --bg-color: #8d5ef2;
-      --container-fill: #d8ceed;
-      --container-fill-hover: #e3d9f4;
-      --card-bg: #c8bddd;
-      --card-bg-hover: #bfb2d8;
-      --text-color: #211f24;
+      --bg-color: #0b0b0c;
+      --container-fill: #151517;
+      --container-fill-hover: #1b1b1e;
+      --card-bg: #1c1c1f;
+      --card-bg-hover: #232327;
+      --text-color: #ededee;
       --hero-text: #ffffff;
 
-      --btn-bg: #ffffff;
-      --btn-text: #211f24;
-      --btn-bg-hover: #f5effe;
-      --btn-secondary-bg: #c4b8dc;
-      --btn-secondary-hover: #baaecd;
+      --btn-bg: #ff3d7f;
+      --btn-text: #ffffff;
+      --btn-bg-hover: #ff5a93;
+      --btn-secondary-bg: #232327;
+      --btn-secondary-hover: #2b2b30;
 
-      --slider-track: #b8abd0;
+      --slider-track: #2b2b30;
       --ripple-color: rgba(33, 31, 36, 0.24);
-      --font-google-sans: 'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-google-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     * {
@@ -1056,6 +1056,24 @@
       animation: none !important;
     }
   </style>
+  <style id="starmusic-welcome">
+    .shape { display: none; }
+    .icon-tint { filter: none; }
+    .riff-icon { width: 88px; height: 88px; border-radius: 22px; }
+    .riff-title { font-size: 44px; font-weight: 600; letter-spacing: -0.03em; margin-top: 16px; }
+    .riff-title span:nth-child(n) { animation-delay: 0.15s; }
+    body.intro .shape, body.intro .riff-icon { animation: smFade 0.5s cubic-bezier(0.2, 0, 0, 1) forwards; }
+    body.intro .riff-title span { animation: smFade 0.5s cubic-bezier(0.2, 0, 0, 1) 0.15s forwards; }
+    body.intro:not(.intro-done) #step1 .stacked-container { animation: smFade 0.4s cubic-bezier(0.2, 0, 0, 1) backwards; }
+    body.intro:not(.intro-done) #step1 .stacked-container.top { animation-delay: 0.45s; }
+    body.intro:not(.intro-done) #step1 .stacked-container.bottom { animation-delay: 0.55s; }
+    .riff-title span { transform: none; filter: none; }
+    @keyframes smFade { from { opacity: 0; } to { opacity: 1; } }
+    .stacked-container, .stacked-container:hover { border-radius: 10px !important; }
+    .stacked-group { gap: 6px; }
+    .btn { border-radius: 10px; }
+    .btn.win-icon, .btn.win-icon:hover { border-radius: 10px; }
+  </style>
 </head>
 <body>
 
@@ -1083,7 +1101,7 @@
             <g class="shape-spin"><path class="shape-path" id="shapePath" d=""/></g>
           </svg>
           <div class="icon-tint">
-            <img class="riff-icon" src="../../assets/riff.svg" alt="StarMusic" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23ffffff\'><path d=\'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z\'/></svg>';" >
+            <img class="riff-icon" src="../../assets/00-starmusic.svg" alt="StarMusic" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23ffffff\'><path d=\'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z\'/></svg>';" >
           </div>
         </div>
         <h1 class="riff-title">
@@ -1127,7 +1145,7 @@
           <p class="step-header-subtitle" data-i18n>Select a preset or fine-tune color and intensity to your liking.</p>
 
           <div class="themes-grid">
-            <div class="theme-card" data-preset="dark">
+            <div class="theme-card active" data-preset="dark">
               <div class="mockup-window mock-dark">
                 <div class="mock-topbar"><div class="mock-search"></div></div>
                 <div class="mock-body">
@@ -1166,7 +1184,7 @@
               <span class="theme-card-name" data-i18n>Discord</span>
             </div>
 
-            <div class="theme-card active" data-preset="light-purple-vibrant">
+            <div class="theme-card" data-preset="light-purple-vibrant">
               <div class="mockup-window mock-light-purple-vibrant">
                 <div class="mock-topbar"><div class="mock-search"></div></div>
                 <div class="mock-body">
@@ -1674,11 +1692,11 @@
       'dark': {
         h: 265, b: 10, s: 20,
         vars: {
-          '--bg-color': '#141218', '--container-fill': '#211f26', '--container-fill-hover': '#2b2930',
-          '--card-bg': '#2b2930', '--card-bg-hover': '#36343b', '--slider-track': '#36343b',
-          '--text-color': '#e6e0e9', '--hero-text': '#d0bcff', '--btn-bg': '#d0bcff',
-          '--btn-text': '#381e72', '--btn-bg-hover': '#dfcfff', '--btn-secondary-bg': '#36343b',
-          '--btn-secondary-hover': '#413f46', '--ripple-color': 'rgba(20, 18, 24, 0.3)'
+          '--bg-color': '#0b0b0c', '--container-fill': '#151517', '--container-fill-hover': '#1b1b1e',
+          '--card-bg': '#1c1c1f', '--card-bg-hover': '#232327', '--slider-track': '#2b2b30',
+          '--text-color': '#ededee', '--hero-text': '#ffffff', '--btn-bg': '#ff3d7f',
+          '--btn-text': '#ffffff', '--btn-bg-hover': '#ff5a93', '--btn-secondary-bg': '#232327',
+          '--btn-secondary-hover': '#2b2b30', '--ripple-color': 'rgba(255, 255, 255, 0.12)'
         }
       },
       'light': {
@@ -1924,7 +1942,7 @@
       introStarted = true;
       document.body.classList.add('intro');
       startShapeLoop(2600);
-      setTimeout(() => document.body.classList.add('intro-done'), 4200);
+      setTimeout(() => document.body.classList.add('intro-done'), 1400);
     }
 
     function scheduleIntro() {
@@ -1940,7 +1958,7 @@
 
     Promise.race([document.fonts.ready, new Promise((resolve) => setTimeout(resolve, 1200))]).then(scheduleIntro, scheduleIntro);
 
-    applyPreset('light-purple-vibrant');
+    applyPreset('dark');
 
     const SWITCH_HTML = '<span class="sw-thumb"><svg viewBox="0 0 24 24"><path class="sw-icon"/></svg></span>';
     document.querySelectorAll('.sw').forEach((sw) => { sw.innerHTML = SWITCH_HTML; });
