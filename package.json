@@ -18,14 +18,14 @@
   "license": "MIT",
   "description": "StarMusic - ad-free, lightweight music player (YouTube Music, SoundCloud, local files). Based on Riff.",
   "devDependencies": {
-    "electron": "^41.7.1",
-    "electron-builder": "^26.15.3"
+    "electron": "^45.0.0",
+    "electron-builder": "^26.18.0"
   },
   "dependencies": {
     "cfonts": "^3.3.1",
     "discord-rpc": "^4.0.1",
-    "electron-updater": "^6.8.9",
-    "hls.js": "^1.7.1",
+    "electron-updater": "^6.8.11",
+    "hls.js": "^1.7.3",
     "tone": "^15.1.22"
   },
   "productName": "StarMusic",
