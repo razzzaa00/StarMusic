@@ -21,7 +21,7 @@ StarMusic est un fork de [Riff](https://github.com/rootscripts/riff) (licence MI
 
 Les installateurs sont publiés sur la page [Releases](https://github.com/razzzaa00/starmusic/releases).
 
-Pour publier une nouvelle version, pousse un tag `vX.Y.Z` (par exemple `git tag v1.0.0 && git push origin v1.0.0`). Le workflow GitHub Actions construit l'installateur Windows (`.exe`), Linux (`.AppImage`) et macOS (`.dmg`) et les met dans la release.
+Pour publier une nouvelle version : sur GitHub, **Releases → Draft a new release**, crée un tag `vX.Y.Z` (par exemple `v1.0.1`) et publie. On peut aussi pousser le tag en ligne de commande (`git tag v1.0.1 && git push origin v1.0.1`). Le workflow « Release » construit alors l'installateur Windows (`.exe`), Linux (`.AppImage`) et macOS (`.dmg`) et les ajoute à la release. S'il ne démarre pas tout seul : onglet **Actions → Release → Run workflow**, en choisissant le tag dans la liste.
 
 StarMusic a besoin de **yt-dlp** et **ffmpeg** pour le streaming et les téléchargements. Au premier lancement, l'app propose de les installer. Sinon, mets-les dans le dossier `bin/` ou dans le `PATH` (sur macOS : `brew install yt-dlp ffmpeg`).
 

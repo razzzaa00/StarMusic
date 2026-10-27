@@ -181,6 +181,23 @@ body {
   transition: background-color 120ms var(--sm-ease), opacity 120ms var(--sm-ease);
 }
 
+.btn-play-pause.playing,
+.btn-play-pause:active,
+.btn-play-pause.pressed,
+.btn-play-pause.playing:active,
+.btn-play-pause.playing.pressed {
+  width: 40px !important;
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
+  border-radius: 50% !important;
+}
+
+.btn-play-pause:hover,
+.btn-play-pause:focus-visible {
+  background-color: color-mix(in srgb, var(--sm-accent) 88%, white);
+}
+
 /* Player bar artwork: plain square thumbnail */
 
 .artwork-wrapper,
