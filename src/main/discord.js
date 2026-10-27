@@ -1,7 +1,7 @@
 
 const RPC = require('discord-rpc');
 
-const CLIENT_ID = '1520100510877749358';
+const CLIENT_ID = '1555633524780961834';
 const RECONNECT_DELAY_MS = 15000;
 
 let rpcClient = null;
