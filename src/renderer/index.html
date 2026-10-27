@@ -76,13 +76,17 @@
 
     <div class="platform-switch-container">
       <div class="platform-pill-switch">
+        <button class="platform-btn active" data-platform="all" id="platform-all" title="Search all platforms">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span>All</span>
+        </button>
         <button class="platform-btn" data-platform="youtube" id="platform-yt" title="YouTube">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
             <path d="M21.58 7.19c-.23-.86-.91-1.54-1.77-1.77C18.25 5 12 5 12 5s-6.25 0-7.81.42c-.86.23-1.54.91-1.77 1.77C2 8.75 2 12 2 12s0 3.25.42 4.81c.23.86.91 1.54 1.77 1.77C5.75 19 12 19 12 19s6.25 0 7.81-.42c.86-.23 1.54-.91 1.77-1.77C22 15.25 22 12 22 12s0-3.25-.42-4.81zM10 15V9l5.2 3L10 15z"/>
           </svg>
           <span>YouTube</span>
         </button>
-        <button class="platform-btn active" data-platform="ytmusic" id="platform-ytm" title="YouTube Music">
+        <button class="platform-btn" data-platform="ytmusic" id="platform-ytm" title="YouTube Music">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-12.5v9l6-4.5-6-4.5z"/>
           </svg>
@@ -691,21 +695,26 @@
 
             <div class="setting-item" id="setting-engine-api-row">
               <div class="setting-item-top">
-                <span class="setting-name">Search engine</span>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                  <span class="setting-name" data-i18n>Default search</span>
+                  <span class="setting-hint" data-i18n>Where the search bar looks. "All platforms" searches YouTube Music, YouTube and SoundCloud at once. The buttons next to the search bar change it too.</span>
+                </div>
               </div>
               <select class="pill-select" id="select-engine-api" style="display:none">
+                <option value="all" selected>All platforms</option>
                 <option value="youtube">YouTube</option>
-                <option value="ytmusic" selected>YouTube Music</option>
+                <option value="ytmusic">YouTube Music</option>
                 <option value="soundcloud">SoundCloud</option>
               </select>
               <div class="m3-dropdown" id="engine-api-dropdown">
                 <button class="m3-dropdown-trigger" id="engine-api-trigger" type="button">
-                  <span id="engine-api-label">YouTube Music</span>
+                  <span id="engine-api-label">All platforms</span>
                   <svg class="m3-dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
                 </button>
                 <div class="m3-dropdown-menu" id="engine-api-menu">
+                  <button class="m3-dropdown-option selected" data-value="all" type="button">All platforms</button>
                   <button class="m3-dropdown-option" data-value="youtube" type="button">YouTube</button>
-                  <button class="m3-dropdown-option selected" data-value="ytmusic" type="button">YouTube Music</button>
+                  <button class="m3-dropdown-option" data-value="ytmusic" type="button">YouTube Music</button>
                   <button class="m3-dropdown-option" data-value="soundcloud" type="button">SoundCloud</button>
                 </div>
               </div>
@@ -2020,7 +2029,7 @@
               </svg>
               StarMusic, based on <a href="https://github.com/rootscripts/riff" target="_blank" rel="noopener">Riff</a> by rootless (MIT)
             </span>
-            <span class="settings-version-tag">v1.0.0</span>
+            <span class="settings-version-tag">v1.1.0</span>
           </div>
             </div>
           </div>

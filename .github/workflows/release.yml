@@ -35,7 +35,7 @@ jobs:
           - os: ubuntu-latest
             flag: --linux
           - os: macos-latest
-            flag: --mac dmg zip --x64 --arm64
+            flag: --mac dmg --x64 --arm64
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4

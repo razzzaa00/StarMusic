@@ -3,8 +3,8 @@
 /* StarMusic minimal skin, layered over the Riff base styles. */
 
 :root {
-  --sm-accent: #ff3d7f;
-  --sm-on-accent: #ffffff;
+  --sm-accent: #5aa9ff;
+  --sm-on-accent: #04111f;
   --sm-line: color-mix(in srgb, var(--md-sys-color-on-surface-solid, #e6e6e8) 8%, transparent);
   --sm-hover: color-mix(in srgb, var(--md-sys-color-on-surface-solid, #e6e6e8) 6%, transparent);
   --sm-press: color-mix(in srgb, var(--md-sys-color-on-surface-solid, #e6e6e8) 10%, transparent);
@@ -147,6 +147,70 @@ body {
 
 .track-row:hover {
   background: var(--sm-hover);
+}
+
+/* Row actions float over the end of the row on hover instead of reserving width */
+
+.content-view:not(#view-artist) .track-row-actions {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 2px 2px 2px 8px;
+  border-radius: var(--sm-radius);
+  background: var(--md-sys-color-surface-container-solid, #1e1f22);
+  pointer-events: none;
+}
+
+.content-view:not(#view-artist) .track-row:hover .track-row-actions,
+.content-view:not(#view-artist) .track-row:focus-within .track-row-actions {
+  pointer-events: auto;
+}
+
+.search-box input {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.platform-btn {
+  padding: 6px 10px;
+  gap: 6px;
+}
+
+/* Search results: platform icon before the title, album link after the artists */
+
+.track-source-icon {
+  display: inline-flex;
+  vertical-align: -2px;
+  margin-right: 6px;
+}
+
+.track-source-icon.source-youtube,
+.track-source-icon.source-ytmusic {
+  color: #ff4040;
+}
+
+.track-source-icon.source-soundcloud {
+  color: #ff7a1a;
+}
+
+.track-row-album-sep {
+  margin: 0 6px;
+  opacity: 0.6;
+}
+
+.track-row-album {
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.track-row-album:hover {
+  color: var(--md-sys-color-on-surface-solid, #fff);
+  text-decoration: underline;
 }
 
 /* Buttons: quiet icon buttons, one accent action */

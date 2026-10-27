@@ -652,6 +652,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const state = {
     platform: localStorage.getItem('riff_platform') || 'ytmusic',
+    searchSource: localStorage.getItem('riff_search_source') || 'all',
     currentView: 'discover',
     previousView: 'discover',
     currentPlaylistId: null,
@@ -8523,6 +8524,123 @@ document.addEventListener('DOMContentLoaded', async () => {
     requestAnimationFrame(frame);
   }
 
+  function sourceName(src) {
+    return { ytmusic: 'YouTube Music', youtube: 'YouTube', soundcloud: 'SoundCloud' }[src] || '';
+  }
+
+  function sourceIconSvg(src) {
+    return {
+      ytmusic: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-12.5v9l6-4.5-6-4.5z"/></svg>',
+      youtube: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M21.58 7.19c-.23-.86-.91-1.54-1.77-1.77C18.25 5 12 5 12 5s-6.25 0-7.81.42c-.86.23-1.54.91-1.77 1.77C2 8.75 2 12 2 12s0 3.25.42 4.81c.23.86.91 1.54 1.77 1.77C5.75 19 12 19 12 19s6.25 0 7.81-.42c.86-.23 1.54-.91 1.77-1.77C22 15.25 22 12 22 12s0-3.25-.42-4.81zM10 15V9l5.2 3L10 15z"/></svg>',
+      soundcloud: '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.5 14.5c0 .28-.22.5-.5.5s-.5-.22-.5-.5v-4c0-.28.22-.5.5-.5s.5.22.5.5v4zm-2 0c0 .28-.22.5-.5.5s-.5-.22-.5-.5v-3c0-.28.22-.5.5-.5s.5.22.5.5v3zm-2 0c0 .28-.22.5-.5.5s-.5-.22-.5-.5v-2c0-.28.22-.5.5-.5s.5.22.5.5v2zm-2 0c0 .28-.22.5-.5.5s-.5-.22-.5-.5v-1c0-.28.22-.5.5-.5s.5.22.5.5v1zm14.5-.5c0 1.93-1.57 3.5-3.5 3.5H13V9.1c.7-.6 1.6-1.1 2.6-1.1 2.2 0 4.1 1.6 4.4 3.8.3-.2.7-.3 1-.3 1.4 0 2.5 1.1 2.5 2.5z"/></svg>'
+    }[src] || '';
+  }
+
+  function tagTrackSource(track) {
+    if (!track || track.source) return track;
+    track.source = track.platform === 'soundcloud' ? 'soundcloud' : 'youtube';
+    return track;
+  }
+
+  function trackSourceOf(track) {
+    if (!track || track.platform === 'local') return '';
+    if (track.source) return track.source;
+    if (track.platform === 'soundcloud') return 'soundcloud';
+    if (track.platform === 'youtube' || track.platform === 'ytmusic') return 'youtube';
+    return '';
+  }
+
+  function searchMatchScore(track, words) {
+    const norm = (v) => String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const main = norm(track.title) + ' ' + norm(track.artist);
+    const album = norm(track.album);
+    let score = 0;
+    for (const w of words) {
+      if (main.includes(w)) score += 2;
+      else if (album.includes(w)) score += 1;
+    }
+    return score;
+  }
+
+  async function performSearchAll(query, searchToken) {
+    const q = state.searchQuery;
+    const words = q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/\s+/).filter(Boolean);
+    const sources = ['ytmusic', 'youtube', 'soundcloud'];
+    const buckets = {};
+    let pending = sources.length;
+    let artistCardRequested = false;
+
+    const render = () => {
+      if (state.searchToken !== searchToken) return;
+      const merged = [];
+      const seen = new Map();
+      sources.forEach((src) => {
+        (buckets[src] || []).forEach((t, rank) => {
+          const key = (t.platform === 'soundcloud' ? 'sc:' : 'yt:') + t.id;
+          const prev = seen.get(key);
+          if (prev) {
+            if (!prev.track.album && t.album) prev.track.album = t.album;
+            return;
+          }
+          const entry = { track: t, rank, score: searchMatchScore(t, words) };
+          seen.set(key, entry);
+          merged.push(entry);
+        });
+      });
+      merged.sort((a, b) => (b.score - a.score) || (a.rank - b.rank));
+      const tracks = merged.map(e => e.track);
+      state.searchResults = tracks;
+      if (!el.searchTracksList) return;
+      if (tracks.length) {
+        renderTracks(el.searchTracksList, tracks, 'search');
+      } else if (pending === 0) {
+        el.searchTracksList.innerHTML = '<div class="empty-hint">No results on YouTube Music, YouTube or SoundCloud</div>';
+      }
+      if (!artistCardRequested && pending === 0 && tracks.length) {
+        artistCardRequested = true;
+        const showArtists = localStorage.getItem('riff_search_artists') !== '0';
+        if (showArtists && query.trim().length >= 3) fetchArtistCardForSearch(query.trim(), searchToken, tracks);
+      }
+    };
+
+    await Promise.all(sources.map(async (src) => {
+      try {
+        const res = await fetch(`http://127.0.0.1:${state.serverPort}/api/search?q=${encodeURIComponent(q)}&platform=${src}&limit=15`);
+        const data = await res.json();
+        if (data && data.success && Array.isArray(data.tracks)) {
+          buckets[src] = data.tracks.map(t => tagTrackSource(t));
+        }
+      } catch (_) {}
+      pending--;
+      render();
+    }));
+  }
+
+  async function openAlbumByName(albumTitle, artist) {
+    const norm = (v) => String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+-\s+(ep|single)$/, '').replace(/\((deluxe|expanded|remastered)[^)]*\)/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+    const firstArtist = String(artist || '').split(/,|&| x | feat\.? | ft\.? /i)[0].trim();
+    const wanted = norm(albumTitle);
+    const who = norm(firstArtist);
+    if (!wanted) return;
+    const sameArtist = (a) => !who || norm(a.artist).includes(who) || who.includes(norm(a.artist));
+    const close = (t) => t.length >= 3 && wanted.length >= 3 && (t.startsWith(wanted) || wanted.startsWith(t));
+    try {
+      const queries = [...new Set([(firstArtist + ' ' + albumTitle).trim(), albumTitle])];
+      const lists = await Promise.all(queries.map(async (q) => {
+        try {
+          const data = await (await fetch(`http://127.0.0.1:${state.serverPort}/api/albums/search?q=${encodeURIComponent(q)}`)).json();
+          return (data && data.success && Array.isArray(data.albums)) ? data.albums : [];
+        } catch (_) { return []; }
+      }));
+      const albums = lists.flat().filter(sameArtist);
+      const match = albums.find(a => norm(a.title) === wanted) || albums.find(a => close(norm(a.title)));
+      if (match) return openAlbum(match);
+    } catch (_) {}
+    showToast('Album not found', 'info');
+  }
+
+
   async function performSearch(query) {
     if (!query || !query.trim()) return;
 
@@ -8551,6 +8669,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       renderM3SearchLoader(el.searchTracksList);
     }
 
+    if (navigator.onLine && state.searchSource === 'all') {
+      return performSearchAll(query, searchToken);
+    }
+
     try {
       if (!navigator.onLine) {
         if (el.searchTracksList) el.searchTracksList.innerHTML = `<div class="empty-hint">Offline: connect to the internet to search new tracks</div>`;
@@ -8566,6 +8688,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         throw new Error(data.error || 'Failed to load search results');
       }
 
+      data.tracks.forEach(t => tagTrackSource(t));
       state.searchResults = data.tracks;
 
       requestAnimationFrame(() => {
@@ -8732,13 +8855,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       const trackArtist = (track.artist || '').trim().toLowerCase();
       const showArtist = isAlbum ? (Boolean(trackArtist) && Boolean(albumArtist) && trackArtist !== albumArtist) : true;
       const explicitTag = isTrackExplicit(track) ? '<span class="explicit-badge" title="Explicit">E</span>' : '';
+      const rowSource = isAlbum ? '' : trackSourceOf(track);
+      const sourceIcon = rowSource ? `<span class="track-source-icon source-${rowSource}" title="${sourceName(rowSource)}">${sourceIconSvg(rowSource)}</span>` : '';
+      const albumLink = (!isAlbum && track.album) ? `<span class="track-row-album-sep">·</span><span class="track-row-album" title="Open album">${escapeHtml(track.album)}</span>` : '';
 
       row.innerHTML = `
       <span class="track-row-index">${(isAlbum && track.no) ? track.no : (idx + 1)}</span>
       ${!isAlbum ? `<img class="track-row-thumb" src="${escapeHtml(rowThumb || '')}" alt="" onerror="this.style.visibility='hidden'">` : ''}
       <div class="track-row-info">
-      <span class="track-row-title">${escapeHtml(track.title || 'untitled')}</span>
-      <div class="track-row-artist-wrap">${explicitTag}${showArtist ? `<span class="track-row-artist" title="view artist profile">${escapeHtml(track.artist || 'unknown artist')}</span>` : ''}</div>
+      <span class="track-row-title">${sourceIcon}${escapeHtml(track.title || 'untitled')}</span>
+      <div class="track-row-artist-wrap">${explicitTag}${showArtist ? `<span class="track-row-artist" title="view artist profile">${escapeHtml(track.artist || 'unknown artist')}</span>` : ''}${albumLink}</div>
       </div>
       <span class="track-row-duration">${formatDuration(track.duration)}</span>
       <div class="track-row-actions">
@@ -8796,6 +8922,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         row.addEventListener('click', (e) => {
           if (e.target.closest('.track-row-actions') || e.target.closest('.artist-link-part')) return;
+          if (e.target.closest('.track-row-album')) {
+            e.stopPropagation();
+            openAlbumByName(track.album, track.artist);
+            return;
+          }
           if (multiSel.active && multiSel.context === context) {
             toggleTrackSelection(track, row);
             return;
@@ -11603,10 +11734,16 @@ function bindCoverHoldZoom(wrapEl) {
 
 
   function setPlatform(platform, triggerSearch = true) {
-    if (!['youtube', 'ytmusic', 'soundcloud'].includes(platform)) platform = 'ytmusic';
-    state.platform = platform;
-    localStorage.setItem('riff_platform', platform);
+    if (!['all', 'youtube', 'ytmusic', 'soundcloud'].includes(platform)) platform = 'all';
+    state.searchSource = platform;
+    localStorage.setItem('riff_search_source', platform);
+    if (platform !== 'all') {
+      state.platform = platform;
+      localStorage.setItem('riff_platform', platform);
+    }
 
+    const platformAll = document.getElementById('platform-all');
+    if (platformAll) platformAll.classList.toggle('active', platform === 'all');
     if (el.platformYt) el.platformYt.classList.toggle('active', platform === 'youtube');
     if (el.platformYtm) el.platformYtm.classList.toggle('active', platform === 'ytmusic');
     if (el.platformSc) el.platformSc.classList.toggle('active', platform === 'soundcloud');
@@ -11614,8 +11751,8 @@ function bindCoverHoldZoom(wrapEl) {
     const select = document.getElementById('select-engine-api');
     if (select) select.value = platform;
     const label = document.getElementById('engine-api-label');
-    const nameMap = { youtube: 'YouTube', ytmusic: 'YouTube Music', soundcloud: 'SoundCloud' };
-    if (label) label.textContent = nameMap[platform] || 'YouTube';
+    const nameMap = { all: 'All platforms', youtube: 'YouTube', ytmusic: 'YouTube Music', soundcloud: 'SoundCloud' };
+    if (label) label.textContent = nameMap[platform] || 'All platforms';
     const menu = document.getElementById('engine-api-menu');
     if (menu) {
       menu.querySelectorAll('.m3-dropdown-option').forEach(opt => {
@@ -11628,9 +11765,10 @@ function bindCoverHoldZoom(wrapEl) {
     }
   }
 
-  const savedPlatform = localStorage.getItem('riff_platform') || 'ytmusic';
-  setPlatform(savedPlatform, false);
+  setPlatform(state.searchSource, false);
 
+  const platformAllBtn = document.getElementById('platform-all');
+  if (platformAllBtn) platformAllBtn.addEventListener('click', () => setPlatform('all'));
   if (el.platformYt) el.platformYt.addEventListener('click', () => setPlatform('youtube'));
   if (el.platformYtm) el.platformYtm.addEventListener('click', () => setPlatform('ytmusic'));
   if (el.platformSc) el.platformSc.addEventListener('click', () => setPlatform('soundcloud'));
@@ -11667,7 +11805,7 @@ function bindCoverHoldZoom(wrapEl) {
       document.documentElement.style.setProperty('--engine-gap', '0px');
     } else {
       const isCompact = document.body.classList.contains('compact-engine-btns');
-      const w = isCompact ? 124 : (container.offsetWidth || 435);
+      const w = isCompact ? 164 : (container.offsetWidth || 435);
       if (w > 0) {
         document.documentElement.style.setProperty('--engine-w', `${w}px`);
         document.documentElement.style.setProperty('--engine-gap', '16px');
@@ -15377,7 +15515,7 @@ function bindCoverHoldZoom(wrapEl) {
     const $ = (id) => document.getElementById(id);
     const modal = $('update-modal'), title = $('update-title'), text = $('update-text'), bar = $('update-progress');
     const nowB = $('btn-update-now'), laterB = $('btn-update-later'), ignoreB = $('btn-update-ignore');
-    let currentAppVersion = '1.0.0';
+    let currentAppVersion = '1.1.0';
     if (api && api.getAppVersion) {
       api.getAppVersion().then((v) => {
         if (v) {
@@ -18177,7 +18315,7 @@ function bindCoverHoldZoom(wrapEl) {
       if (typeof showToast === 'function') showToast('No playlists to export', 'error');
       return;
     }
-    let appVer = '1.0.0';
+    let appVer = '1.1.0';
     try {
       if (window.electronAPI && window.electronAPI.getAppVersion) {
         const v = await window.electronAPI.getAppVersion();
