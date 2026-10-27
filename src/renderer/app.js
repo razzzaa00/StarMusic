@@ -767,7 +767,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (customArt && isHttpUrl(customArt.cover)) rpcThumb = customArt.cover;
     else if (isHttpUrl(track.thumbnail)) rpcThumb = track.thumbnail;
     else if (isHttpUrl(track.cover)) rpcThumb = track.cover;
-    const shareUrl = buildRiffShareUrl(track, '', '', 500);
+    const shareUrl = buildRiffShareUrl(track);
     window.electronAPI.discordRpcUpdate({
       title: track.title || 'Unknown Track',
       artist: track.artist || 'Unknown Artist',
@@ -3499,36 +3499,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (r) { if (r.title) t.title = r.title; if (r.artist) t.artist = r.artist; }
     return t;
   }
-  function buildRiffShareUrl(track, directStream = '', resolvedUrl = '', maxLen = 0) {
-    if (!track) return 'https://riff.hs.vc/share/';
+  function buildRiffShareUrl(track) {
+    if (!track) return '';
     applyTrackRenames(track);
     const isHttpUrl = (u) => typeof u === 'string' && (u.startsWith('http://') || u.startsWith('https://')) && !u.includes('127.0.0.1');
-    const title = track.title || 'Untitled';
-    const artist = track.artist || '';
-    const fallbackYt = (track.id && track.platform !== 'soundcloud' && track.platform !== 'local') ? ('https://www.youtube.com/watch?v=' + track.id) : '';
-    const trackUrl = resolvedUrl || (isHttpUrl(track.url) ? track.url : fallbackYt);
-    const customArt = typeof getTrackArt === 'function' ? getTrackArt(track) : null;
-    const rawThumb = (customArt && isHttpUrl(customArt.cover))
-      ? customArt.cover
-      : (track.thumbnail || track.cover || (typeof getTrackThumbUrl === 'function' ? getTrackThumbUrl(track) : '') || '');
-    const params = new URLSearchParams();
-    params.set('t', 'music');
-    if (title) params.set('n', title);
-    if (artist) params.set('a', artist);
-    if (isHttpUrl(trackUrl)) params.set('url', trackUrl);
-    if (directStream && isHttpUrl(directStream) && !directStream.includes('.m3u8')) params.set('stream', directStream);
-    if (isHttpUrl(rawThumb)) params.set('img', rawThumb);
-    if (track.duration) params.set('dur', String(Math.round(Number(track.duration))));
-    let full = 'https://riff.hs.vc/share/?' + params.toString();
-    if (maxLen > 0 && full.length > maxLen) {
-      params.delete('stream');
-      full = 'https://riff.hs.vc/share/?' + params.toString();
-    }
-    if (maxLen > 0 && full.length > maxLen) {
-      params.delete('img');
-      full = 'https://riff.hs.vc/share/?' + params.toString();
-    }
-    return maxLen > 0 ? full.slice(0, maxLen) : full;
+    if (isHttpUrl(track.url)) return track.url;
+    if (!track.id || track.platform === 'local' || track.platform === 'soundcloud') return '';
+    const host = track.platform === 'youtube' ? 'https://www.youtube.com' : 'https://music.youtube.com';
+    return host + '/watch?v=' + encodeURIComponent(track.id);
   }
 
   let crossfadeTriggered = false;
@@ -8639,35 +8617,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.isTrackExplicit = isTrackExplicit;
 
   let isShareInProgress = false;
-  function showShareSpinnerToast() {
-    document.querySelectorAll('.riff-share-spinner-toast').forEach(t => t.remove());
-    const container = document.getElementById('toast-container');
-    if (!container) return () => {};
-    const toast = document.createElement('div');
-    toast.className = 'riff-toast info riff-share-spinner-toast';
-    toast.innerHTML = '<svg class="g-spinner" style="width:20px;height:20px;" viewBox="0 0 48 48"><circle cx="24" cy="24" r="20"/></svg>';
-    container.appendChild(toast);
-    return () => {
-      toast.classList.add('leaving');
-      setTimeout(() => { if (toast.parentNode) toast.remove(); }, 180);
-    };
-  }
-  async function resolveFullTrackStreamForShare(track) {
-    if (!track) return '';
-    const port = state.serverPort || 38472;
-    try {
-      const streamInfoUrl = `http://127.0.0.1:${port}/api/stream-info?url=${encodeURIComponent(track.url || '')}&id=${encodeURIComponent(track.id || '')}&platform=${encodeURIComponent(track.platform || state.platform || 'youtube')}&title=${encodeURIComponent(track.title || '')}&artist=${encodeURIComponent(track.artist || '')}&duration=${encodeURIComponent(track.duration || 0)}&forShare=1`;
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 4500);
-      const response = await fetch(streamInfoUrl, { signal: ctrl.signal });
-      clearTimeout(timer);
-      const data = await response.json();
-      if (data && data.success && data.streamUrl && !data.streamUrl.includes('.m3u8')) {
-        return data.streamUrl;
-      }
-    } catch (_) {}
-    return '';
-  }
   async function executeCopyShareLink(track) {
     if (isShareInProgress) return;
     if (!track) {
@@ -8675,19 +8624,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
     isShareInProgress = true;
-    const hideSpinner = showShareSpinnerToast();
     try {
-      let directStream = '';
-      if ((track.url || track.id) && track.platform !== 'local') {
-        directStream = await resolveFullTrackStreamForShare(track);
-      }
-      const shareUrl = buildRiffShareUrl(track, directStream, '', 0);
-      await navigator.clipboard.writeText(shareUrl);
-      showToast('Share link copied to clipboard!', 'success');
+      const shareUrl = buildRiffShareUrl(track);
+      const text = shareUrl || [track.title, track.artist].filter(Boolean).join(' - ');
+      await navigator.clipboard.writeText(text);
+      showToast(shareUrl ? 'Link copied to clipboard!' : 'Title copied to clipboard', 'success');
     } catch (e) {
       showToast('Failed to copy share link', 'error');
     } finally {
-      hideSpinner();
       setTimeout(() => { isShareInProgress = false; }, 400);
     }
   }
