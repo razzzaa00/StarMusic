@@ -10,7 +10,7 @@ StarMusic est un fork de [Riff](https://github.com/rootscripts/riff) (licence MI
 - **Fichiers locaux** : FLAC, WAV, MP3, OGG, M4A, avec lecture des tags et des pochettes.
 - **Import de playlists** depuis **Spotify, Apple Music, YouTube Music et SoundCloud** : colle le lien d'une playlist publique et elle devient une playlist StarMusic.
 - **Equalizer 10 bandes**, vitesse, pitch, reverb, distorsion et normalisation du volume.
-- **Playlists, favoris, albums**, file d'attente, lecture aléatoire et répétition.
+- **Playlists, favoris, albums**, file d'attente, lecture aléatoire et répétition, tri par date d'ajout, titre, artiste ou durée.
 - **Paroles synchronisées** (karaoké, fichiers LRC, traduction).
 - **Téléchargement hors-ligne** en MP3, FLAC, Opus ou WAV.
 - **Réglages complets** : thèmes, couleurs, polices, visualiseurs, CSS personnalisé, plugins, Discord Rich Presence.
@@ -34,7 +34,7 @@ xattr -cr /Applications/StarMusic.app
 
 ## Lancer depuis le code
 
-Il faut Node.js 18 ou plus récent.
+Il faut Node.js 18 ou plus récent. L'app tourne sur Electron 45.
 
 ```bash
 git clone https://github.com/razzzaa00/starmusic.git

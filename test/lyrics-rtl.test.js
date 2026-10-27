@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 
-const { isRtlText } = require('../lyrics-rtl');
+const { isRtlText } = require('../src/renderer/lyrics-rtl');
 
 test('detects Arabic lyrics as right-to-left', () => {
   assert.strictEqual(isRtlText('أحبك يا حياتي'), true);

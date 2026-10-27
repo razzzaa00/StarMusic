@@ -3,7 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert');
 
-const { TRACK_SORT_MODES, sortTracks, backfillAddedAt } = require('../track-sort');
+const { TRACK_SORT_MODES, sortTracks, backfillAddedAt } = require('../src/renderer/track-sort');
 
 function track(id, addedAt) {
   return addedAt === undefined ? { id } : { id, addedAt };

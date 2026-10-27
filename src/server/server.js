@@ -6894,7 +6894,15 @@ function startServer(port = PORT) {
   });
 }
 
-module.exports = { startServer, PORT, getServerToken, fetchLyricsDirect, fetchGeniusLyrics, fetchNetEaseWords, parseYrc };
+function stopServer() {
+  if (!server.listening) return Promise.resolve();
+  return new Promise((resolve) => {
+    server.close(() => resolve());
+    if (typeof server.closeAllConnections === 'function') server.closeAllConnections();
+  });
+}
+
+module.exports = { startServer, stopServer, PORT, getServerToken, fetchLyricsDirect, fetchGeniusLyrics, fetchNetEaseWords, parseYrc };
 
 if (require.main === module) {
   startServer();
