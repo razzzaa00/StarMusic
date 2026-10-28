@@ -194,13 +194,31 @@ let currentAppState = {};
 const sseClients = new Set();
 const YT_PLAYER_CLIENTS = ['android', null, 'android_vr', 'tv', 'web_safari', 'ios'];
 const YT_PARALLEL_CLIENTS = 3;
-let lastGoodYtClient;
 
-// Starts the most reliable clients at once and keeps the first stream URL; the rest are fallbacks.
-async function raceYtStreamUrl(trackUrl, format) {
-  const order = lastGoodYtClient === undefined
-    ? YT_PLAYER_CLIENTS
-    : [lastGoodYtClient, ...YT_PLAYER_CLIENTS.filter(c => c !== lastGoodYtClient)];
+// Some clients get URLs YouTube refuses or cuts without a PO token; reject them here, not mid-song.
+async function isStreamUsable(streamUrl) {
+  if (streamUrl.includes('.m3u8')) return true;
+  const clen = Number((streamUrl.match(/[?&]clen=(\d+)/) || [])[1] || 0);
+  const start = clen > 1200000 ? 1048576 : 0;
+  try {
+    const r = await fetch(streamUrl, { headers: { Range: `bytes=${start}-${start + 4095}` }, signal: AbortSignal.timeout(4000) });
+    try { await r.body?.cancel(); } catch (_) {}
+    return r.status === 206 || r.status === 200;
+  } catch (_) {
+    return false;
+  }
+}
+
+const ytRefused = new Map();
+const YT_REFUSED_TTL = 10 * 60 * 1000;
+function ytRecentlyRefused(key) {
+  const at = ytRefused.get(key);
+  return Boolean(at && Date.now() - at < YT_REFUSED_TTL);
+}
+
+// Runs the first clients in parallel but prefers them in list order: android first, the others only if it fails.
+// With tail, the remaining slower clients are tried one by one afterwards.
+async function raceYtStreamUrl(trackUrl, format, { tail = true } = {}) {
   const children = new Set();
   const attempt = async (client) => {
     const raw = await executeYtDlp([
@@ -212,17 +230,34 @@ async function raceYtStreamUrl(trackUrl, format) {
     ], 9000, { onChild: (p) => children.add(p) });
     const line = raw.trim().split(String.fromCharCode(10)).map(l => l.trim()).find(l => l.startsWith("http"));
     if (!line) throw new Error('no stream url');
-    lastGoodYtClient = client;
+    if (!(await isStreamUsable(line))) throw new Error('stream url refused by YouTube');
     return line;
   };
+  const wave = YT_PLAYER_CLIENTS.slice(0, YT_PARALLEL_CLIENTS).map(attempt);
+  wave.forEach(p => p.catch(() => {}));
   try {
-    return await Promise.any(order.slice(0, YT_PARALLEL_CLIENTS).map(attempt));
-  } catch (_) {
+    try { return await wave[0]; } catch (_) {}
+    try { return await Promise.any(wave.slice(1)); } catch (_) {}
   } finally {
     for (const p of children) { if (p.exitCode === null) { try { p.kill('SIGKILL'); } catch (_) {} } }
   }
-  for (const client of order.slice(YT_PARALLEL_CLIENTS)) {
-    try { return await attempt(client); } catch (_) {}
+  if (!tail) return null;
+  return tailYtStreamUrl(trackUrl, format);
+}
+
+async function tailYtStreamUrl(trackUrl, format) {
+  for (const client of YT_PLAYER_CLIENTS.slice(YT_PARALLEL_CLIENTS)) {
+    try {
+      const raw = await executeYtDlp([
+        "--no-config", "-g", "--no-warnings", "--no-playlist", "--no-check-certificates", "--prefer-free-formats",
+        "--socket-timeout", "5", "--retries", "1",
+        "--extractor-args", "youtube:player_client=" + client,
+        "-f", format,
+        "--", trackUrl
+      ], 9000);
+      const line = raw.trim().split(String.fromCharCode(10)).map(l => l.trim()).find(l => l.startsWith("http"));
+      if (line && await isStreamUsable(line)) return line;
+    } catch (_) {}
   }
   return null;
 }
@@ -1607,7 +1642,7 @@ async function prefetchTrack(trackUrl, trackId, platform) {
     if (!isSafeMediaUrl(trackUrl)) return;
     const isYt = platform === 'youtube' || platform === 'ytmusic' || /youtube\.com|youtu\.be/.test(trackUrl);
     const resolving = (async () => {
-      if (isYt) return raceYtStreamUrl(trackUrl, 'bestaudio/best/18');
+      if (isYt) return raceYtStreamUrl(trackUrl, 'bestaudio/best/18', { tail: false });
       const raw = await executeYtDlp([
         '--no-config', '-g', '--no-warnings', '--no-playlist', '--no-check-certificates', '--prefer-free-formats',
         '-f', 'bestaudio/best', '--', trackUrl
@@ -1621,6 +1656,7 @@ async function prefetchTrack(trackUrl, trackId, platform) {
     } finally {
       if (streamInfoInflight.get(cacheKey) === resolving) streamInfoInflight.delete(cacheKey);
     }
+    if (!streamUrl && isYt) ytRefused.set(cacheKey, Date.now());
 
     if (streamUrl) {
       const isHls = streamUrl.includes('.m3u8');
@@ -2231,6 +2267,7 @@ async function handleStreamInfo(req, res, trackUrl, trackId, platform = 'youtube
   trackUrl = normalizeSoundCloudUrl(trackUrl);
   const parsedUrl = (req && req.url) ? url.parse(req.url, true) : { query: {} };
   const forShare = Boolean(parsedUrl.query && parsedUrl.query.forShare === '1');
+  const fresh = Boolean(parsedUrl.query && parsedUrl.query.fresh === '1');
   let cleanId = cleanTrackId(trackId);
   if (!cleanId && trackUrl && trackUrl.includes('v=')) {
     cleanId = cleanTrackId(trackUrl.split('v=')[1].split('&')[0]);
@@ -2264,6 +2301,10 @@ async function handleStreamInfo(req, res, trackUrl, trackId, platform = 'youtube
   }
 
   const cacheKey = (cleanId || trackUrl || `${artist}_${title}`).toLowerCase();
+  if (fresh) {
+    streamUrlCache.delete(cacheKey);
+    if (cleanId) streamUrlCache.delete(cleanId);
+  }
   if (!forShare && cacheKey && (streamUrlCache.has(cacheKey) || (cleanId && streamUrlCache.has(cleanId)))) {
     const cached = streamUrlCache.get(cacheKey) || (cleanId ? streamUrlCache.get(cleanId) : null);
     if (cached && (Date.now() - cached.timestamp < 7200000)) {
@@ -2273,8 +2314,10 @@ async function handleStreamInfo(req, res, trackUrl, trackId, platform = 'youtube
     }
   }
 
+  let skipYt = !fresh && ytRecentlyRefused(cacheKey);
   if (streamInfoInflight.has(cacheKey)) {
     const inflightUrl = await streamInfoInflight.get(cacheKey).catch(() => null);
+    if (!inflightUrl) skipYt = true;
     if (inflightUrl) {
       const isHls = inflightUrl.includes('.m3u8');
       const data = { success: true, isLocal: false, streamUrl: inflightUrl, isHls, proxyUrl: `http://127.0.0.1:${PORT}/api/audio-proxy?url=${encodeURIComponent(inflightUrl)}` };
@@ -2301,7 +2344,15 @@ async function handleStreamInfo(req, res, trackUrl, trackId, platform = 'youtube
 
     if (isSafeMediaUrl(trackUrl)) {
       if (isYt) {
-        streamUrl = await raceYtStreamUrl(trackUrl, forShare ? audioFormat : "bestaudio/best/18");
+        const cleanSong = cleanTitleForMatching(title);
+        const scQuery = (cleanSong.includes(String(artist || '').toLowerCase()) ? cleanSong : `${artist || ''} ${cleanSong}`).trim();
+        const scStandby = (!forShare && scQuery) ? fetchDirectSoundCloudStreamServer('', scQuery).catch(() => null) : Promise.resolve(null);
+        if (!skipYt) streamUrl = await raceYtStreamUrl(trackUrl, forShare ? audioFormat : "bestaudio/best/18", { tail: false });
+        if (!streamUrl) {
+          ytRefused.set(cacheKey, Date.now());
+          streamUrl = await scStandby;
+        }
+        if (!streamUrl && !skipYt) streamUrl = await tailYtStreamUrl(trackUrl, forShare ? audioFormat : "bestaudio/best/18");
       } else {
         if (isSc && !forShare) {
           try { streamUrl = await fetchDirectSoundCloudStreamServer(/^\d{6,}$/.test(cleanId || '') ? cleanId : trackUrl, ''); } catch (_) {}
