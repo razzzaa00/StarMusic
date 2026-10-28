@@ -1,0 +1,5 @@
+tags:
+  golden:
+    skip: "renders screenshots; run with: flutter test --run-skipped -t golden --update-goldens"
+  live:
+    skip: "network test; run with: flutter test --run-skipped -t live"
