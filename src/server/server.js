@@ -194,6 +194,7 @@ let currentAppState = {};
 const sseClients = new Set();
 const YT_PLAYER_CLIENTS = ['android', null, 'android_vr', 'tv', 'web_safari', 'ios'];
 const YT_PARALLEL_CLIENTS = 3;
+const YT_VIDEO_ID = /^[\w-]{11}$/;
 
 // Some clients get URLs YouTube refuses or cuts without a PO token; reject them here, not mid-song.
 async function isStreamUsable(streamUrl) {
@@ -201,7 +202,7 @@ async function isStreamUsable(streamUrl) {
   const clen = Number((streamUrl.match(/[?&]clen=(\d+)/) || [])[1] || 0);
   const start = clen > 1200000 ? 1048576 : 0;
   try {
-    const r = await fetch(streamUrl, { headers: { Range: `bytes=${start}-${start + 4095}` }, signal: AbortSignal.timeout(4000) });
+    const r = await fetch(streamUrl, { headers: { Range: `bytes=${start}-${start + 4095}` }, signal: AbortSignal.timeout(6000) });
     try { await r.body?.cancel(); } catch (_) {}
     return r.status === 206 || r.status === 200;
   } catch (_) {
@@ -223,11 +224,11 @@ async function raceYtStreamUrl(trackUrl, format, { tail = true } = {}) {
   const attempt = async (client) => {
     const raw = await executeYtDlp([
       "--no-config", "-g", "--no-warnings", "--no-playlist", "--no-check-certificates", "--prefer-free-formats",
-      "--socket-timeout", "5", "--retries", "1",
+      "--socket-timeout", "10", "--retries", "1",
       ...(client ? ["--extractor-args", "youtube:player_client=" + client] : []),
       "-f", format,
       "--", trackUrl
-    ], 9000, { onChild: (p) => children.add(p) });
+    ], 15000, { onChild: (p) => children.add(p) });
     const line = raw.trim().split(String.fromCharCode(10)).map(l => l.trim()).find(l => l.startsWith("http"));
     if (!line) throw new Error('no stream url');
     if (!(await isStreamUsable(line))) throw new Error('stream url refused by YouTube');
@@ -250,11 +251,11 @@ async function tailYtStreamUrl(trackUrl, format) {
     try {
       const raw = await executeYtDlp([
         "--no-config", "-g", "--no-warnings", "--no-playlist", "--no-check-certificates", "--prefer-free-formats",
-        "--socket-timeout", "5", "--retries", "1",
+        "--socket-timeout", "10", "--retries", "1",
         "--extractor-args", "youtube:player_client=" + client,
         "-f", format,
         "--", trackUrl
-      ], 9000);
+      ], 15000);
       const line = raw.trim().split(String.fromCharCode(10)).map(l => l.trim()).find(l => l.startsWith("http"));
       if (line && await isStreamUsable(line)) return line;
     } catch (_) {}
@@ -570,15 +571,22 @@ async function refreshServerScClientId() {
   return serverScClientId;
 }
 
+// SoundCloud serves some label tracks only as encrypted (DRM) HLS, which no player outside SoundCloud can decode.
+function scHasPlayableStream(t) {
+  const list = t && t.media && Array.isArray(t.media.transcodings) ? t.media.transcodings : null;
+  if (!list) return true;
+  return list.some(tc => tc && tc.format && (tc.format.protocol === 'progressive' || tc.format.protocol === 'hls'));
+}
+
 async function scApiSearch(query, limit = 20) {
   let cid = serverScClientId;
   for (let attempt = 0; attempt < 2; attempt++) {
-    const r = await fetch(`https://api-v2.soundcloud.com/search/tracks?q=${encodeURIComponent(query)}&limit=${limit}&client_id=${cid}`, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(8000) });
+    const r = await fetch(`https://api-v2.soundcloud.com/search/tracks?q=${encodeURIComponent(query)}&limit=${limit}&client_id=${cid}`, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(12000) });
     if (r.status === 401 || r.status === 403) { cid = await refreshServerScClientId(); continue; }
     if (!r.ok) return [];
     const j = await r.json();
     return (Array.isArray(j && j.collection) ? j.collection : [])
-      .filter(t => t && t.kind === 'track' && t.streamable !== false && t.policy !== 'BLOCK' && t.policy !== 'SNIP')
+      .filter(t => t && t.kind === 'track' && t.streamable !== false && t.policy !== 'BLOCK' && t.policy !== 'SNIP' && scHasPlayableStream(t))
       .map(t => {
         const pm = t.publisher_metadata || {};
         const art = t.artwork_url || (t.user && t.user.avatar_url) || '';
@@ -602,11 +610,11 @@ async function resolveScTranscodingServer(trackObj, cid) {
   const list = trackObj.media.transcodings;
   const prog = list.find(t => t.format && t.format.protocol === 'progressive');
   const hls = list.find(t => t.format && t.format.protocol === 'hls' && !/encrypted/i.test(t.format.mime_type || ''));
-  const chosen = prog || hls || list[0];
+  const chosen = prog || hls;
   if (!chosen || !chosen.url) return null;
   const sep = chosen.url.includes('?') ? '&' : '?';
   const auth = trackObj.track_authorization ? `&track_authorization=${encodeURIComponent(trackObj.track_authorization)}` : '';
-  const res = await fetch(`${chosen.url}${sep}client_id=${cid}${auth}`, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(6000) });
+  const res = await fetch(`${chosen.url}${sep}client_id=${cid}${auth}`, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(10000) });
   if (!res.ok) return null;
   const j = await res.json();
   return (j && j.url) ? j.url : null;
@@ -619,7 +627,7 @@ async function fetchDirectSoundCloudStreamServer(scUrlOrId, queryFallback) {
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
       if (idMatch && idMatch[1]) {
-        const r = await fetch(`https://api-v2.soundcloud.com/tracks/${idMatch[1]}?client_id=${cid}`, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(6000) });
+        const r = await fetch(`https://api-v2.soundcloud.com/tracks/${idMatch[1]}?client_id=${cid}`, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(10000) });
         if (r.status === 401 || r.status === 403) { cid = await refreshServerScClientId(); continue; }
         if (r.ok) {
           const tObj = await r.json();
@@ -628,12 +636,12 @@ async function fetchDirectSoundCloudStreamServer(scUrlOrId, queryFallback) {
         }
       }
       if (queryFallback) {
-        const sr = await fetch(`https://api-v2.soundcloud.com/search/tracks?q=${encodeURIComponent(queryFallback)}&limit=5&client_id=${cid}`, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(6000) });
+        const sr = await fetch(`https://api-v2.soundcloud.com/search/tracks?q=${encodeURIComponent(queryFallback)}&limit=5&client_id=${cid}`, { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(10000) });
         if (sr.status === 401 || sr.status === 403) { cid = await refreshServerScClientId(); continue; }
         if (sr.ok) {
           const sj = await sr.json();
           const col = (sj && Array.isArray(sj.collection)) ? sj.collection : [];
-          const pick = col.find(t => t.policy !== 'SNIP' && t.duration > 30000) || col[0];
+          const pick = col.find(t => t.policy !== 'SNIP' && t.duration > 30000 && scHasPlayableStream(t));
           if (pick) {
             const u = await resolveScTranscodingServer(pick, cid);
             if (u) return u;
@@ -1452,9 +1460,11 @@ function executeYtDlp(args, timeoutMs = 25000, opts = {}) {
     const outDecoder = new StringDecoder('utf8');
     const errDecoder = new StringDecoder('utf8');
     let timer = null;
+    let timedOut = false;
 
     if (timeoutMs > 0) {
       timer = setTimeout(() => {
+        timedOut = true;
         try { proc.kill('SIGKILL'); } catch (e) {}
         reject(new Error(`yt-dlp timed out after ${timeoutMs}ms`));
       }, timeoutMs);
@@ -1463,10 +1473,12 @@ function executeYtDlp(args, timeoutMs = 25000, opts = {}) {
     proc.stdout.on('data', (d) => { stdout += outDecoder.write(d); });
     proc.stderr.on('data', (d) => { stderr += errDecoder.write(d); });
 
-    proc.on('close', (code) => {
+    proc.on('close', (code, signal) => {
       if (timer) clearTimeout(timer);
       if (code === 0) {
         resolve(stdout);
+      } else if (code === null && signal === 'SIGKILL' && !timedOut) {
+        reject(new Error('yt-dlp stopped'));
       } else {
         const firstArgs = (args || []).slice(0, 3).join(' ');
         const errSnippet = String(stderr || `code ${code}`).slice(0, 300);
@@ -1636,7 +1648,7 @@ async function prefetchTrack(trackUrl, trackId, platform) {
   prefetchingSet.add(cacheKey);
 
   try {
-    if (platform === 'youtube' && (!trackUrl || !trackUrl.startsWith('http')) && cleanId) {
+    if (platform === 'youtube' && (!trackUrl || !trackUrl.startsWith('http')) && YT_VIDEO_ID.test(cleanId || '')) {
       trackUrl = `https://www.youtube.com/watch?v=${cleanId}`;
     }
     if (!isSafeMediaUrl(trackUrl)) return;
@@ -2326,8 +2338,14 @@ async function handleStreamInfo(req, res, trackUrl, trackId, platform = 'youtube
     }
   }
 
-  if (platform === 'youtube' && (!trackUrl || !trackUrl.startsWith('http')) && cleanId) {
-    trackUrl = `https://www.youtube.com/watch?v=${cleanId}`;
+  if (platform === 'youtube' && (!trackUrl || !trackUrl.startsWith('http'))) {
+    if (YT_VIDEO_ID.test(cleanId || '')) {
+      trackUrl = `https://www.youtube.com/watch?v=${cleanId}`;
+    } else if (title || artist) {
+      // Album tracks carry an Apple Music id, not a video id: find the song on YouTube by name.
+      const found = await directYoutubeSearch(`${artist || ''} ${title || ''}`.trim(), true).catch(() => []);
+      if (found && found[0] && found[0].url) trackUrl = found[0].url;
+    }
   }
 
   let streamUrl = null;
@@ -2356,15 +2374,19 @@ async function handleStreamInfo(req, res, trackUrl, trackId, platform = 'youtube
       } else {
         if (isSc && !forShare) {
           try { streamUrl = await fetchDirectSoundCloudStreamServer(/^\d{6,}$/.test(cleanId || '') ? cleanId : trackUrl, ''); } catch (_) {}
+          if (!streamUrl && (title || artist)) {
+            const found = await directYoutubeSearch(`${artist || ''} ${cleanTitleForMatching(title)}`.trim(), true).catch(() => []);
+            if (found && found[0] && found[0].url) streamUrl = await raceYtStreamUrl(found[0].url, "bestaudio/best/18", { tail: false });
+          }
         }
         if (!streamUrl) try {
           const args = [
             "--no-config", "-g", "--no-warnings", "--no-playlist", "--no-check-certificates", "--prefer-free-formats",
-            "--socket-timeout", "5", "--retries", "1",
+            "--socket-timeout", "10", "--retries", "1",
             "-f", audioFormat,
             "--", trackUrl
           ];
-          const raw = await executeYtDlp(args, 8000);
+          const raw = await executeYtDlp(args, 12000);
           const lines = raw.trim().split(String.fromCharCode(10)).map(l => l.trim()).filter(l => l.startsWith("http"));
           const nonDrm = isSc ? lines.find(l => !/preview|drm/i.test(l)) : lines[0];
           if (nonDrm) streamUrl = nonDrm;
@@ -2378,12 +2400,12 @@ async function handleStreamInfo(req, res, trackUrl, trackId, platform = 'youtube
       try {
         const fbArgs = [
           "--no-config", "-g", "--no-warnings", "--no-playlist", "--no-check-certificates", "--prefer-free-formats",
-          "--socket-timeout", "5", "--retries", "1",
+          "--socket-timeout", "10", "--retries", "1",
           ...(!isYt ? ["--extractor-args", "youtube:player_client=android"] : []),
           "-f", audioFormat,
           fbSpec
         ];
-        const fbRaw = await executeYtDlp(fbArgs, 7000);
+        const fbRaw = await executeYtDlp(fbArgs, 12000);
         const lines = fbRaw.trim().split(String.fromCharCode(10)).map(l => l.trim()).filter(l => l.startsWith("http"));
         const nonDrm = lines.find(l => !/preview|drm/i.test(l)) || lines[0];
         if (nonDrm) streamUrl = nonDrm;
