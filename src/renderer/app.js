@@ -239,6 +239,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   var isDraggingTvkSeek = false;
   var m3c = { canvas: null, ctx: null, img: new Image(), imgReady: false, from: 0, to: 0, start: 0, raf: 0, last: 0, phase: 0, hoverProgress: 0, isHovered: false, rotation: 0, rotRate: 0.25, targetRate: 0.25 };
 
+  // Release notes arrive as HTML (auto-updater) or Markdown (GitHub API): show them as plain text.
+  function releaseNotesText(notes) {
+    if (!notes) return '';
+    const raw = Array.isArray(notes) ? notes.map(n => (n && n.note) || '').join('\n') : String(notes);
+    return raw
+      .replace(/<\/(p|li|h\d|div)>|<br\s*\/?>/gi, '\n')
+      .replace(/<li[^>]*>/gi, '• ')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+      .replace(/^#+\s*/gm, '')
+      .replace(/^\s*[-*]\s+/gm, '• ')
+      .replace(/\*\*|__|`/g, '')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
   function escapeHtml(value) {
     return String(value == null ? '' : value)
       .replace(/&/g, '&amp;')
@@ -15558,7 +15575,7 @@ function bindCoverHoldZoom(wrapEl) {
     const $ = (id) => document.getElementById(id);
     const modal = $('update-modal'), title = $('update-title'), text = $('update-text'), bar = $('update-progress');
     const nowB = $('btn-update-now'), laterB = $('btn-update-later'), ignoreB = $('btn-update-ignore');
-    let currentAppVersion = '1.1.2';
+    let currentAppVersion = '1.2.0';
     if (api && api.getAppVersion) {
       api.getAppVersion().then((v) => {
         if (v) {
@@ -15622,7 +15639,8 @@ function bindCoverHoldZoom(wrapEl) {
         laterB.classList.toggle('hidden', !canNativeInstall);
       }
       if (text) {
-        const notes = d.releaseNotes ? `<div style="margin-top:8px;font-size:12px;opacity:0.85;max-height:120px;overflow-y:auto;white-space:pre-wrap;">${escapeHtml(d.releaseNotes)}</div>` : '';
+        const plain = releaseNotesText(d.releaseNotes);
+        const notes = plain ? `<div style="margin-top:8px;font-size:12px;opacity:0.85;max-height:160px;overflow-y:auto;white-space:pre-wrap;">${escapeHtml(plain)}</div>` : '';
         if (canNativeInstall) {
           text.innerHTML = `A new version is ready to download.${notes}`;
         } else {
@@ -18358,7 +18376,7 @@ function bindCoverHoldZoom(wrapEl) {
       if (typeof showToast === 'function') showToast('No playlists to export', 'error');
       return;
     }
-    let appVer = '1.1.2';
+    let appVer = '1.2.0';
     try {
       if (window.electronAPI && window.electronAPI.getAppVersion) {
         const v = await window.electronAPI.getAppVersion();

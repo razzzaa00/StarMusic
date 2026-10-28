@@ -1,0 +1,102 @@
+name: Mobile
+
+on:
+  pull_request:
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/mobile.yml'
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      tag:
+        description: Release tag to attach the APK and IPA to
+        type: string
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  FLUTTER_VERSION: '3.47.8'
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      - name: Version
+        id: version
+        shell: bash
+        run: |
+          tag="${{ inputs.tag }}"
+          name="${tag#v}"
+          [ -n "$name" ] || name="$(grep '^version:' pubspec.yaml | sed 's/version: *//; s/+.*//')"
+          IFS=. read -r a b c <<< "$name"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "code=$((a * 10000 + b * 100 + c))" >> "$GITHUB_OUTPUT"
+      - run: flutter build apk --release --build-name ${{ steps.version.outputs.name }} --build-number ${{ steps.version.outputs.code }}
+      - run: mv build/app/outputs/flutter-apk/app-release.apk "starmusic-${{ steps.version.outputs.name }}-android.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: starmusic-android
+          path: mobile/starmusic-*-android.apk
+      - name: Upload to the release
+        if: inputs.tag != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ inputs.tag }}" starmusic-*-android.apk --clobber
+
+  ios:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Version
+        id: version
+        shell: bash
+        run: |
+          tag="${{ inputs.tag }}"
+          name="${tag#v}"
+          [ -n "$name" ] || name="$(grep '^version:' pubspec.yaml | sed 's/version: *//; s/+.*//')"
+          IFS=. read -r a b c <<< "$name"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "code=$((a * 10000 + b * 100 + c))" >> "$GITHUB_OUTPUT"
+      # Unsigned: Sideloadly or AltStore signs it with the user's own Apple ID when installing.
+      - run: flutter build ios --release --no-codesign --build-name ${{ steps.version.outputs.name }} --build-number ${{ steps.version.outputs.code }}
+      - name: Package the IPA
+        run: |
+          mkdir Payload
+          cp -R build/ios/iphoneos/Runner.app Payload/
+          zip -qry "starmusic-${{ steps.version.outputs.name }}-ios.ipa" Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: starmusic-ios
+          path: mobile/starmusic-*-ios.ipa
+      - name: Upload to the release
+        if: inputs.tag != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ inputs.tag }}" starmusic-*-ios.ipa --clobber

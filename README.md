@@ -21,7 +21,7 @@ StarMusic est un fork de [Riff](https://github.com/rootscripts/riff) (licence MI
 
 Les installateurs sont publiés sur la page [Releases](https://github.com/razzzaa00/starmusic/releases).
 
-Pour publier une nouvelle version : sur GitHub, **Releases → Draft a new release**, crée un tag `vX.Y.Z` (par exemple `v1.0.1`) et publie. On peut aussi pousser le tag en ligne de commande (`git tag v1.0.1 && git push origin v1.0.1`). Le workflow « Release » construit alors l'installateur Windows (`.exe`), Linux (`.AppImage`) et macOS (`.dmg`) et les ajoute à la release. S'il ne démarre pas tout seul : onglet **Actions → Release → Run workflow**, en choisissant le tag dans la liste.
+Pour publier une nouvelle version : sur GitHub, **Releases → Draft a new release**, crée un tag `vX.Y.Z` (par exemple `v1.0.1`) et publie. On peut aussi pousser le tag en ligne de commande (`git tag v1.0.1 && git push origin v1.0.1`). Le workflow « Release » construit alors l'installateur Windows (`.exe`), Linux (`.AppImage`) et macOS (`.dmg`), ainsi que les apps Android (`.apk`) et iPhone (`.ipa`), et les ajoute à la release. S'il ne démarre pas tout seul : onglet **Actions → Release → Run workflow**, en choisissant le tag dans la liste.
 
 StarMusic a besoin de **yt-dlp** et **ffmpeg** pour le streaming et les téléchargements. Au premier lancement, l'app propose de les installer. Sinon, mets-les dans le dossier `bin/` ou dans le `PATH` (sur macOS : `brew install yt-dlp ffmpeg`).
 
@@ -54,7 +54,12 @@ npm test         # tests
 
 ## Mobile (iPhone / Android)
 
-Pas encore de version mobile. C'est la prochaine étape prévue.
+L'app mobile est dans [`mobile/`](mobile/README.md) (Flutter). Chaque release contient :
+
+- `starmusic-X.Y.Z-android.apk` : ouvre-le sur le téléphone et autorise l'installation d'apps inconnues. Les versions suivantes s'installent par-dessus sans perdre la bibliothèque.
+- `starmusic-X.Y.Z-ios.ipa` : à installer depuis un PC avec [Sideloadly](https://sideloadly.io) (ou AltStore) et ton identifiant Apple gratuit. Avec un compte gratuit, Apple demande de réinstaller l'app tous les 7 jours.
+
+Recherche sur YouTube Music, YouTube et SoundCloud, albums, paroles synchronisées, favoris, playlists, file d'attente, lecture en arrière-plan avec les commandes de l'écran verrouillé, égaliseur (Android). Les playlists du PC s'importent depuis les réglages (fichier exporté par « Export all playlists »).
 
 ## Avertissement
 
