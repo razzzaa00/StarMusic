@@ -50,11 +50,19 @@ class StreamResolver {
       final uri = await _soundcloud.streamUrl(track).catchError((_) => null);
       return uri == null ? null : ResolvedStream(uri);
     }
-    final hls = await _youtubeHls(track.id).catchError((_) => null);
-    if (hls != null) return ResolvedStream(hls);
-    final direct = await _youtubeExplode(track.id).catchError((_) => null);
-    if (direct != null) return ResolvedStream(direct);
+    final videoId = track.hasVideoId ? track.id : await _findVideoId(track).catchError((_) => null);
+    if (videoId != null) {
+      final hls = await _youtubeHls(videoId).catchError((_) => null);
+      if (hls != null) return ResolvedStream(hls);
+      final direct = await _youtubeExplode(videoId).catchError((_) => null);
+      if (direct != null) return ResolvedStream(direct);
+    }
     return _soundCloudSubstitute(track);
+  }
+
+  Future<String?> _findVideoId(Track track) async {
+    final results = await _yt.search.search('${track.artist} ${track.title}'.trim()).timeout(const Duration(seconds: 8));
+    return results.isEmpty ? null : results.first.id.value;
   }
 
   Future<Uri?> _youtubeHls(String videoId) async {

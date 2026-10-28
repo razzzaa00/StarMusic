@@ -7,12 +7,16 @@ import 'package:just_audio/just_audio.dart';
 
 import '../models/track.dart';
 import '../services/stream_resolver.dart';
+import 'equalizer.dart';
 import 'library.dart';
 
 enum RepeatSetting { off, all, one }
 
 class PlayerController extends ChangeNotifier {
-  PlayerController(this._resolver, this._library) {
+  PlayerController(this._resolver, this._library, {this.equalizer})
+      : _player = AudioPlayer(
+          audioPipeline: equalizer?.effect == null ? null : AudioPipeline(androidAudioEffects: [equalizer!.effect!]),
+        ) {
     _player.playerStateStream.listen((s) {
       if (s.processingState == ProcessingState.completed) _onCompleted();
       notifyListeners();
@@ -21,7 +25,8 @@ class PlayerController extends ChangeNotifier {
 
   final StreamResolver _resolver;
   final Library _library;
-  final AudioPlayer _player = AudioPlayer();
+  final EqualizerController? equalizer;
+  final AudioPlayer _player;
   AudioPlayer get audio => _player;
 
   List<Track> _original = [];
@@ -110,6 +115,7 @@ class PlayerController extends ChangeNotifier {
       notifyListeners();
       _library.addToHistory(track);
       unawaited(_player.play());
+      unawaited(equalizer?.attach().catchError((_) {}));
       _prefetchNext();
     } catch (_) {
       if (token != _loadToken) return;

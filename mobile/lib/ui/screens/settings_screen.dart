@@ -8,7 +8,7 @@ import '../app_scope.dart';
 import '../theme.dart';
 import '../widgets/track_actions.dart';
 
-const appVersion = '1.0.0';
+const appVersion = '1.1.2';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -59,7 +59,7 @@ class SettingsScreen extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.download_rounded),
               title: const Text('Importer les playlists du PC'),
-              subtitle: const Text('Sur PC : Réglages → Storage → « Export all playlists », puis envoie le fichier .json sur ton iPhone (AirDrop, iCloud Drive…).', style: dim),
+              subtitle: const Text('Sur PC : Réglages → Storage → « Export all playlists », puis envoie le fichier .json sur ton téléphone (AirDrop, iCloud Drive, Google Drive…).', style: dim),
               onTap: () => _import(context),
             ),
             ListTile(
@@ -71,19 +71,73 @@ class SettingsScreen extends StatelessWidget {
               },
             ),
             const Divider(),
-            const ListTile(
-              leading: Icon(Icons.graphic_eq_rounded),
-              title: Text('Égaliseur'),
-              subtitle: Text('Pas encore disponible sur iPhone : iOS ne donne pas accès au son du lecteur à l\'égaliseur utilisé sur PC.', style: dim),
-            ),
+            const _EqualizerSection(),
+            const Divider(),
             const ListTile(
               leading: Icon(Icons.info_outline_rounded),
-              title: Text('StarMusic pour iPhone $appVersion'),
+              title: Text('StarMusic $appVersion'),
               subtitle: Text('Sans pub · YouTube Music, YouTube et SoundCloud. Si YouTube refuse un titre, il est joué depuis SoundCloud.', style: dim),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _EqualizerSection extends StatelessWidget {
+  const _EqualizerSection();
+
+  static String _hz(int hz) => hz >= 1000 ? '${(hz / 1000).toStringAsFixed(hz % 1000 == 0 ? 0 : 1)}k' : '$hz';
+
+  @override
+  Widget build(BuildContext context) {
+    const dim = TextStyle(color: StarColors.textDim, fontSize: 13);
+    final eq = AppScope.of(context).player.equalizer;
+    if (eq == null || !eq.available) {
+      return const ListTile(
+        leading: Icon(Icons.graphic_eq_rounded),
+        title: Text('Égaliseur'),
+        subtitle: Text('Pas disponible sur iPhone : iOS ne laisse pas les apps modifier le son d\'un flux en ligne.', style: dim),
+      );
+    }
+    return ListenableBuilder(
+      listenable: eq,
+      builder: (context, _) {
+        final p = eq.parameters;
+        return Column(children: [
+          SwitchListTile(
+            secondary: const Icon(Icons.graphic_eq_rounded),
+            title: const Text('Égaliseur'),
+            subtitle: p == null ? const Text('Lance un titre pour régler les bandes.', style: dim) : null,
+            value: eq.enabled,
+            onChanged: eq.setEnabled,
+          ),
+          if (p != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+              child: Column(children: [
+                for (var i = 0; i < p.bands.length; i++)
+                  Row(children: [
+                    SizedBox(width: 48, child: Text(_hz((p.bands[i].centerFrequency).round()), style: dim, textAlign: TextAlign.right)),
+                    Expanded(
+                      child: Slider(
+                        value: p.bands[i].gain.clamp(p.minDecibels, p.maxDecibels),
+                        min: p.minDecibels,
+                        max: p.maxDecibels,
+                        onChanged: eq.enabled ? (v) => eq.setGain(i, v) : null,
+                      ),
+                    ),
+                    SizedBox(width: 52, child: Text('${p.bands[i].gain >= 0 ? '+' : ''}${p.bands[i].gain.toStringAsFixed(1)} dB', style: dim)),
+                  ]),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(onPressed: eq.enabled ? eq.reset : null, child: const Text('Remettre à zéro')),
+                ),
+              ]),
+            ),
+        ]);
+      },
     );
   }
 }

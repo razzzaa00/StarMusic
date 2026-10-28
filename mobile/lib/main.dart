@@ -10,6 +10,7 @@ import 'services/soundcloud.dart';
 import 'services/stream_resolver.dart';
 import 'services/youtube.dart';
 import 'services/youtube_music.dart';
+import 'state/equalizer.dart';
 import 'state/library.dart';
 import 'state/player.dart';
 import 'ui/app_scope.dart';
@@ -22,7 +23,8 @@ Future<void> main() async {
   final youtube = YouTubeApi();
   final soundcloud = SoundCloudApi();
   final library = Library(prefs);
-  final player = PlayerController(StreamResolver(soundcloud, youtube.client), library);
+  final equalizer = EqualizerController(prefs);
+  final player = PlayerController(StreamResolver(soundcloud, youtube.client), library, equalizer: equalizer);
 
   final session = await AudioSession.instance;
   await session.configure(const AudioSessionConfiguration.music());

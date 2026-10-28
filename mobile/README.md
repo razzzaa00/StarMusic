@@ -1,17 +1,25 @@
-# starmusic
+# StarMusic mobile
 
-StarMusic for iPhone
+App Flutter pour iPhone et Android, avec les mêmes sources que la version PC : YouTube Music, YouTube et SoundCloud, sans pub ni compte.
 
-## Getting Started
+## Installer
 
-This project is a starting point for a Flutter application.
+Télécharge le fichier de la dernière [release](https://github.com/razzzaa00/StarMusic/releases/latest) :
 
-A few resources to get you started if this is your first Flutter project:
+- **Android** : `starmusic-X.Y.Z-android.apk`. Ouvre-le sur le téléphone et autorise l'installation depuis cette source.
+- **iPhone** : `starmusic-X.Y.Z-ios.ipa`. Sur un PC, installe [Sideloadly](https://sideloadly.io), branche l'iPhone, glisse le `.ipa` et connecte-toi avec ton identifiant Apple. Sur l'iPhone, active ensuite **Réglages → Confidentialité et sécurité → Mode développeur**, puis fais confiance au profil dans **Réglages → Général → VPN et gestion de l'appareil**. Avec un identifiant Apple gratuit, il faut refaire l'installation tous les 7 jours.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Développer
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+cd mobile
+flutter pub get
+flutter run                                          # sur un téléphone ou un émulateur
+flutter test                                         # tests rapides
+flutter test --run-skipped -t live                   # tests réseau
+flutter test --run-skipped -t golden --update-goldens  # captures d'écran dans test/goldens
+```
+
+Le workflow « Mobile » construit l'APK et l'IPA à chaque pull request qui touche `mobile/`, et les ajoute à chaque release.
+
+L'APK est signé avec `android/app/sideload.jks`, une clé faite pour l'installation à la main (pas pour un store) : elle permet d'installer chaque version par-dessus la précédente.

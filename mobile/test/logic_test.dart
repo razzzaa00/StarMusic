@@ -44,6 +44,11 @@ void main() {
     expect(sc!.isSoundCloud, isTrue);
     expect(Track.fromJson({'title': 'E', 'source': 'local', 'id': 'song.mp3'}), isNull);
     expect(Track.fromJson({'title': 'F', 'source': 'youtube', 'id': 'bad', 'url': 'https://youtu.be/dQw4w9WgXcQ'})!.id, 'dQw4w9WgXcQ');
+    final album = Track.fromJson({'title': 'East Hills', 'artist': 'Nbhd Nick', 'source': 'youtube', 'id': '1496112347'})!;
+    expect(album.hasVideoId, isFalse);
+    expect(sc.hasVideoId, isFalse);
+    expect(yt.hasVideoId, isTrue);
+    expect(Track.fromJson({'title': '', 'source': 'youtube', 'id': '1496112347'}), isNull);
   });
 
   test('YouTube Music song rows are parsed with artist, album and duration', () {

@@ -39,7 +39,14 @@ class SoundCloudApi {
   }
 
   static bool _playable(dynamic t) =>
-      t is Map && t['kind'] == 'track' && t['streamable'] != false && t['policy'] != 'BLOCK' && t['policy'] != 'SNIP';
+      t is Map && t['kind'] == 'track' && t['streamable'] != false && t['policy'] != 'BLOCK' && t['policy'] != 'SNIP' && _hasClearStream(t);
+
+  /// False when SoundCloud only offers encrypted (DRM) streams, which no player outside SoundCloud can read.
+  static bool _hasClearStream(Map t) {
+    final list = t['media'] is Map ? t['media']['transcodings'] : null;
+    if (list is! List) return true;
+    return list.any((x) => x is Map && (x['format']?['protocol'] == 'progressive' || x['format']?['protocol'] == 'hls'));
+  }
 
   static Track trackFromApi(dynamic t) {
     final pm = (t['publisher_metadata'] as Map?) ?? const {};

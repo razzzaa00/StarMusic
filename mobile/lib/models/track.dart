@@ -24,7 +24,7 @@ class Track {
     this.url = '',
   });
 
-  /// YouTube video id or SoundCloud numeric track id.
+  /// YouTube video id or SoundCloud numeric track id (an Apple Music id for some imported album tracks).
   final String id;
   final String title;
   final String artist;
@@ -35,6 +35,8 @@ class Track {
   final MusicSource source;
 
   bool get isSoundCloud => source == MusicSource.soundcloud;
+
+  bool get hasVideoId => !isSoundCloud && RegExp(r'^[\w-]{11}$').hasMatch(id);
 
   String get key => '${isSoundCloud ? 'sc' : 'yt'}:$id';
 
@@ -76,8 +78,9 @@ class Track {
     if (source == null || rawSource == 'local') return null;
     if (source != MusicSource.soundcloud && !RegExp(r'^[\w-]{11}$').hasMatch(id)) {
       final m = RegExp(r'(?:v=|youtu\.be/)([\w-]{11})').firstMatch(url);
-      if (m == null) return null;
-      id = m.group(1)!;
+      // PC album tracks carry an Apple Music id: kept, and found on YouTube by name when played.
+      if (m == null && '${json['title'] ?? ''}'.trim().isEmpty) return null;
+      if (m != null) id = m.group(1)!;
     }
     final d = json['duration'];
     return Track(

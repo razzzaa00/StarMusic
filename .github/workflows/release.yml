@@ -53,3 +53,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
         run: npx electron-builder ${{ matrix.flag }} --publish always
+
+  mobile:
+    needs: create-release
+    uses: ./.github/workflows/mobile.yml
+    with:
+      tag: ${{ github.ref_name }}

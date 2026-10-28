@@ -29,11 +29,20 @@ android {
         versionName = flutter.versionName
     }
 
+    // The APK is installed by hand, not from a store. A fixed key lets each new
+    // version install over the previous one without losing the library.
+    signingConfigs {
+        create("sideload") {
+            storeFile = file("sideload.jks")
+            storePassword = "starmusic"
+            keyAlias = "starmusic"
+            keyPassword = "starmusic"
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("sideload")
         }
     }
 }
