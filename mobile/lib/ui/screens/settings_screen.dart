@@ -8,7 +8,7 @@ import '../app_scope.dart';
 import '../theme.dart';
 import '../widgets/track_actions.dart';
 
-const appVersion = '1.1.2';
+const appVersion = '1.2.0';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});

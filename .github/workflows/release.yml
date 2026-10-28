@@ -23,6 +23,20 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --generate-notes
+      # The update window shows these notes: use .github/release-notes/<tag>.md, or the merged pull requests.
+      - name: Write release notes if empty
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          body="$(gh release view "$GITHUB_REF_NAME" --json body -q .body)"
+          [ -z "$body" ] || exit 0
+          file=".github/release-notes/$GITHUB_REF_NAME.md"
+          if [ -f "$file" ]; then
+            gh release edit "$GITHUB_REF_NAME" --notes-file "$file"
+          else
+            notes="$(gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" -f tag_name="$GITHUB_REF_NAME" -q .body)"
+            gh release edit "$GITHUB_REF_NAME" --notes "$notes"
+          fi
 
   build:
     needs: create-release
