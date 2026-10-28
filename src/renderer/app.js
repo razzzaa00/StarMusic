@@ -3919,7 +3919,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.warn('Track playback notice:', err);
         updatePlayPauseButton(false, false);
         if (el.trackLoadingOverlay) el.trackLoadingOverlay.classList.add('hidden');
-        showToast(err.message || 'Could not load audio stream', 'error');
+        const canSkip = navigator.onLine && state.queue && state.queueIndex < state.queue.length - 1;
+        showToast(canSkip ? 'Could not play this track, skipping' : (err.message || 'Could not load audio stream'), 'error');
+        if (canSkip) setTimeout(() => { if (currentToken === state.loadToken) playNext(); }, 1500);
       }
     } finally {
       clearTimeout(fetchAbortTimeout);
@@ -7245,8 +7247,49 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (el.trackLoadingOverlay) el.trackLoadingOverlay.classList.add('hidden');
       if (state.currentTrack && state.currentTrack.platform === 'local') {
         showToast('File missing from library');
+        return;
       }
+      if (state.currentTrack && !hlsInstance && el.nativeAudio.getAttribute('src')) recoverStream(state.currentTrack);
     });
+
+    let streamRecovery = { key: '', attempts: 0 };
+    // A stream URL can expire or be cut by YouTube mid-song: fetch a fresh one and resume where it stopped.
+    async function recoverStream(track) {
+      const key = String(track.id || track.url || '');
+      if (streamRecovery.key !== key) streamRecovery = { key, attempts: 0 };
+      const token = state.loadToken;
+      if (streamRecovery.attempts >= 2 || !navigator.onLine) {
+        showToast('Could not play this track, skipping', 'error');
+        if (state.queue && state.queueIndex < state.queue.length - 1) setTimeout(() => { if (token === state.loadToken) playNext(); }, 1200);
+        return;
+      }
+      streamRecovery.attempts++;
+      const resumeAt = el.nativeAudio.currentTime || 0;
+      try {
+        const res = await fetch(`http://127.0.0.1:${state.serverPort}/api/stream-info?url=${encodeURIComponent(track.url || '')}&id=${encodeURIComponent(track.id || '')}&platform=${track.platform || state.platform}&title=${encodeURIComponent(track.title || '')}&artist=${encodeURIComponent(track.artist || '')}&duration=${encodeURIComponent(track.duration || 0)}&fresh=1`);
+        const data = await res.json();
+        if (token !== state.loadToken) return;
+        if (!data || !data.success || !data.streamUrl) throw new Error('no stream');
+        if (data.isHls && window.Hls && Hls.isSupported()) {
+          hlsInstance = new Hls({ enableWorker: true, maxBufferLength: 30 });
+          hlsInstance.loadSource(data.streamUrl);
+          hlsInstance.attachMedia(el.nativeAudio);
+          hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+            if (token !== state.loadToken) return;
+            el.nativeAudio.currentTime = resumeAt;
+            playSmooth();
+          });
+        } else {
+          el.nativeAudio.addEventListener('loadedmetadata', () => {
+            if (token === state.loadToken && resumeAt > 1) el.nativeAudio.currentTime = resumeAt;
+          }, { once: true });
+          el.nativeAudio.src = data.streamUrl;
+          playSmooth();
+        }
+      } catch (_) {
+        if (token === state.loadToken) recoverStream(track);
+      }
+    }
 
     el.nativeAudio.addEventListener('waiting', () => {
       updatePlayPauseButton(state.isPlaying, true);
@@ -15515,7 +15558,7 @@ function bindCoverHoldZoom(wrapEl) {
     const $ = (id) => document.getElementById(id);
     const modal = $('update-modal'), title = $('update-title'), text = $('update-text'), bar = $('update-progress');
     const nowB = $('btn-update-now'), laterB = $('btn-update-later'), ignoreB = $('btn-update-ignore');
-    let currentAppVersion = '1.1.0';
+    let currentAppVersion = '1.1.1';
     if (api && api.getAppVersion) {
       api.getAppVersion().then((v) => {
         if (v) {
@@ -18315,7 +18358,7 @@ function bindCoverHoldZoom(wrapEl) {
       if (typeof showToast === 'function') showToast('No playlists to export', 'error');
       return;
     }
-    let appVer = '1.1.0';
+    let appVer = '1.1.1';
     try {
       if (window.electronAPI && window.electronAPI.getAppVersion) {
         const v = await window.electronAPI.getAppVersion();
