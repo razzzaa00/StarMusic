@@ -15558,7 +15558,7 @@ function bindCoverHoldZoom(wrapEl) {
     const $ = (id) => document.getElementById(id);
     const modal = $('update-modal'), title = $('update-title'), text = $('update-text'), bar = $('update-progress');
     const nowB = $('btn-update-now'), laterB = $('btn-update-later'), ignoreB = $('btn-update-ignore');
-    let currentAppVersion = '1.1.1';
+    let currentAppVersion = '1.1.2';
     if (api && api.getAppVersion) {
       api.getAppVersion().then((v) => {
         if (v) {
@@ -18358,7 +18358,7 @@ function bindCoverHoldZoom(wrapEl) {
       if (typeof showToast === 'function') showToast('No playlists to export', 'error');
       return;
     }
-    let appVer = '1.1.1';
+    let appVer = '1.1.2';
     try {
       if (window.electronAPI && window.electronAPI.getAppVersion) {
         const v = await window.electronAPI.getAppVersion();
