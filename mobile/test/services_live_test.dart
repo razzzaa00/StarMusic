@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:starmusic/models/track.dart';
 import 'package:starmusic/services/albums.dart';
 import 'package:starmusic/services/lyrics.dart';
+import 'package:starmusic/services/playlist_import.dart';
 import 'package:starmusic/services/search.dart';
 import 'package:starmusic/services/soundcloud.dart';
 import 'package:starmusic/services/stream_resolver.dart';
@@ -50,4 +51,23 @@ void main() {
     print('lyrics synced=${l.synced.length} album=${album?.title} tracks=${tracks.length}');
     expect(album, isNotNull);
   }, timeout: const Timeout(Duration(seconds: 60)));
+
+  test('playlist links import from Spotify, SoundCloud and YouTube', () async {
+    final importer = PlaylistImporter(sc);
+    final spotify = await importer.load('https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M?si=abc');
+    final soundcloud = await importer.load('https://soundcloud.com/lofi-hip-hop-music/sets/lofi-lofi');
+    // ignore: avoid_print
+    print('spotify "${spotify.name}" ${spotify.tracks.length}, first ${spotify.tracks.first.artist} - ${spotify.tracks.first.title}; soundcloud "${soundcloud.name}" ${soundcloud.tracks.length}');
+    expect(spotify.tracks.length, greaterThan(20));
+    expect(spotify.tracks.first.hasVideoId, isFalse);
+    expect(soundcloud.tracks.length, greaterThan(100));
+    final played = await resolver.resolve(spotify.tracks.first);
+    // ignore: avoid_print
+    print('spotify track resolves: ${played?.uri.host} substitute=${played?.substitute?.title}');
+    final youtube = await importer.load('https://www.youtube.com/playlist?list=PLFgquLnL59alCl_2TQvOiD5Vgm1hCaGSI');
+    // ignore: avoid_print
+    print('youtube "${youtube.name}" ${youtube.tracks.length}, first ${youtube.tracks.first.artist} - ${youtube.tracks.first.title} ${youtube.tracks.first.duration}');
+    expect(youtube.tracks.length, greaterThan(50));
+    expect(() => importer.load('https://example.com/x'), throwsFormatException);
+  }, timeout: const Timeout(Duration(seconds: 120)));
 }

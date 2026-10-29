@@ -65,6 +65,24 @@ class SoundCloudApi {
     );
   }
 
+  /// Loads a public SoundCloud set (playlist or album) from its link.
+  Future<(String, List<Track>)> playlist(String url) async {
+    final set = await _api('/resolve', {'url': url});
+    if (set is! Map || set['kind'] != 'playlist') throw const FormatException('not a SoundCloud playlist');
+    final items = (set['tracks'] is List ? set['tracks'] as List : const []).whereType<Map>().toList();
+    // Sets list only the first tracks in full; the rest come as bare ids.
+    final full = {for (final t in items.where((t) => t['title'] != null)) '${t['id']}': t};
+    final missing = items.map((t) => '${t['id']}').where((id) => !full.containsKey(id)).toList();
+    for (var i = 0; i < missing.length; i += 50) {
+      final batch = await _api('/tracks', {'ids': missing.skip(i).take(50).join(',')});
+      for (final t in (batch is List ? batch : const []).whereType<Map>()) {
+        full['${t['id']}'] = t;
+      }
+    }
+    final tracks = items.map((t) => full['${t['id']}']).where(_playable).map(trackFromApi).toList();
+    return ('${set['title'] ?? 'SoundCloud'}', tracks);
+  }
+
   /// Returns a progressive MP3 URL when SoundCloud offers one, otherwise an HLS playlist.
   Future<Uri?> streamUrl(Track track) async {
     final t = await _api('/tracks/${track.id}', const {});

@@ -5,9 +5,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'services/albums.dart';
 import 'services/lyrics.dart';
+import 'services/playlist_import.dart';
 import 'services/search.dart';
 import 'services/soundcloud.dart';
 import 'services/stream_resolver.dart';
+import 'services/updates.dart';
 import 'services/youtube.dart';
 import 'services/youtube_music.dart';
 import 'state/equalizer.dart';
@@ -44,6 +46,8 @@ Future<void> main() async {
       lyrics: LyricsService(),
       library: library,
       player: player,
+      importer: PlaylistImporter(soundcloud),
+      updates: UpdateChecker(),
     ),
   ));
 }

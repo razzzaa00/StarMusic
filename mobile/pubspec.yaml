@@ -43,6 +43,8 @@ dependencies:
   flutter_svg: ^2.3.0
   file_picker: ^13.3.0
   audio_service: ^0.18.19
+  url_launcher: ^6.3.3
+  package_info_plus: ^10.2.2
 
 dev_dependencies:
   flutter_test:

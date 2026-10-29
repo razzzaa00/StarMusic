@@ -95,8 +95,48 @@ jobs:
         with:
           name: starmusic-ios
           path: mobile/starmusic-*-ios.ipa
+      # SideStore / AltStore source: lets the iPhone install, update and re-sign StarMusic from this link.
+      - name: Write the SideStore source
+        if: inputs.tag != ''
+        env:
+          VERSION: ${{ steps.version.outputs.name }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          ipa="starmusic-$VERSION-ios.ipa"
+          python3 - "$ipa" <<'EOF'
+          import json, os, sys, datetime
+          ipa = sys.argv[1]
+          repo = os.environ["GITHUB_REPOSITORY"]
+          base = f"https://github.com/{repo}/releases"
+          source = {
+              "name": "StarMusic",
+              "identifier": "io.github.razzzaa00.starmusic.source",
+              "sourceURL": f"{base}/latest/download/altstore-source.json",
+              "iconURL": f"https://raw.githubusercontent.com/{repo}/main/assets/icon.png",
+              "tintColor": "#5aa9ff",
+              "apps": [{
+                  "name": "StarMusic",
+                  "bundleIdentifier": "io.github.razzzaa00.starmusic",
+                  "developerName": "razzzaa00",
+                  "subtitle": "Musique sans pub",
+                  "localizedDescription": "YouTube Music, YouTube et SoundCloud sans pub ni compte : recherche, albums, paroles, playlists et lecture en arrière-plan.",
+                  "iconURL": f"https://raw.githubusercontent.com/{repo}/main/assets/icon.png",
+                  "tintColor": "#5aa9ff",
+                  "versions": [{
+                      "version": os.environ["VERSION"],
+                      "date": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                      "downloadURL": f"{base}/download/{os.environ['TAG']}/{ipa}",
+                      "size": os.path.getsize(ipa),
+                      "minOSVersion": "15.0",
+                  }],
+                  "appPermissions": {"entitlements": [], "privacy": {}},
+              }],
+              "news": [],
+          }
+          json.dump(source, open("altstore-source.json", "w"), ensure_ascii=False, indent=2)
+          EOF
       - name: Upload to the release
         if: inputs.tag != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${{ inputs.tag }}" starmusic-*-ios.ipa --clobber
+        run: gh release upload "${{ inputs.tag }}" starmusic-*-ios.ipa altstore-source.json --clobber

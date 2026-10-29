@@ -3,6 +3,7 @@ import 'package:starmusic/models/track.dart';
 import 'package:starmusic/services/lyrics.dart';
 import 'package:starmusic/services/search.dart';
 import 'package:starmusic/services/stream_resolver.dart';
+import 'package:starmusic/services/updates.dart';
 import 'package:starmusic/services/youtube_music.dart';
 
 Track t(String id, String title, String artist, MusicSource s, {String album = ''}) =>
@@ -98,5 +99,13 @@ void main() {
     expect(songs.first.duration, const Duration(minutes: 3, seconds: 31));
     expect(songs.first.thumbnail, endsWith('=w544-h544'));
     expect(songs.first.artists, ['Trippie Redd', 'Playboi Carti']);
+  });
+
+  test('isNewer compares versions number by number', () {
+    expect(isNewer('1.2.0', '1.1.9'), isTrue);
+    expect(isNewer('1.10.0', '1.9.2'), isTrue);
+    expect(isNewer('1.2.0', '1.2.0'), isFalse);
+    expect(isNewer('1.1.2', '1.2.0'), isFalse);
+    expect(isNewer('', '1.2.0'), isFalse);
   });
 }
