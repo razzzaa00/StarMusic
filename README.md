@@ -57,9 +57,9 @@ npm test         # tests
 L'app mobile est dans [`mobile/`](mobile/README.md) (Flutter). Chaque release contient :
 
 - `starmusic-X.Y.Z-android.apk` : ouvre-le sur le téléphone et autorise l'installation d'apps inconnues. Les versions suivantes s'installent par-dessus sans perdre la bibliothèque.
-- `starmusic-X.Y.Z-ios.ipa` : à installer depuis un PC avec [Sideloadly](https://sideloadly.io) (ou AltStore) et ton identifiant Apple gratuit. Avec un compte gratuit, Apple demande de réinstaller l'app tous les 7 jours.
+- `starmusic-X.Y.Z-ios.ipa` : à installer avec [Sideloadly](https://sideloadly.io) depuis un PC, ou avec SideStore (source : `https://github.com/razzzaa00/StarMusic/releases/latest/download/altstore-source.json`). Étapes détaillées dans le [guide mobile](mobile/README.md#iphone).
 
-Recherche sur YouTube Music, YouTube et SoundCloud, albums, paroles synchronisées, favoris, playlists, file d'attente, lecture en arrière-plan avec les commandes de l'écran verrouillé, égaliseur (Android). Les playlists du PC s'importent depuis les réglages (fichier exporté par « Export all playlists »).
+Recherche sur YouTube Music, YouTube et SoundCloud, import de playlists Spotify, YouTube et SoundCloud par lien, albums, paroles synchronisées, favoris, playlists, file d'attente, lecture en arrière-plan avec les commandes de l'écran verrouillé, égaliseur (Android). Les playlists du PC s'importent depuis les réglages (fichier exporté par « Export all playlists »).
 
 ## Avertissement
 

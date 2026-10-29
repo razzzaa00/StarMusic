@@ -2,13 +2,13 @@ import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../services/search.dart';
+import '../../services/updates.dart';
 import '../app_scope.dart';
 import '../theme.dart';
 import '../widgets/track_actions.dart';
-
-const appVersion = '1.2.0';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -73,9 +73,18 @@ class SettingsScreen extends StatelessWidget {
             const Divider(),
             const _EqualizerSection(),
             const Divider(),
+            FutureBuilder<String>(
+              future: AppScope.of(context).updates.installedVersion(),
+              builder: (context, v) => ListTile(
+                leading: const Icon(Icons.system_update_rounded),
+                title: Text('StarMusic ${v.data ?? ''}'.trim()),
+                subtitle: const Text('Touche pour vérifier les mises à jour.', style: dim),
+                onTap: () => checkForUpdate(context, quiet: false),
+              ),
+            ),
             const ListTile(
               leading: Icon(Icons.info_outline_rounded),
-              title: Text('StarMusic $appVersion'),
+              title: Text('À propos'),
               subtitle: Text('Sans pub · YouTube Music, YouTube et SoundCloud. Si YouTube refuse un titre, il est joué depuis SoundCloud.', style: dim),
             ),
           ],
@@ -140,4 +149,40 @@ class _EqualizerSection extends StatelessWidget {
       },
     );
   }
+}
+
+/// Shows a banner when a newer release exists. [quiet] skips the "up to date" and error messages.
+Future<void> checkForUpdate(BuildContext context, {bool quiet = true}) async {
+  final updates = AppScope.of(context).updates;
+  AppUpdate? update;
+  try {
+    update = await updates.check();
+  } catch (_) {
+    if (!quiet && context.mounted) showMessage(context, 'Impossible de vérifier, réessaie plus tard');
+    return;
+  }
+  if (!context.mounted) return;
+  if (update == null) {
+    if (!quiet) showMessage(context, 'StarMusic est à jour');
+    return;
+  }
+  final found = update;
+  final messenger = ScaffoldMessenger.of(context);
+  messenger.showMaterialBanner(MaterialBanner(
+    backgroundColor: StarColors.surfaceHigh,
+    leading: const Icon(Icons.system_update_rounded, color: StarColors.accent),
+    content: Text(found.downloadUrl != null
+        ? 'StarMusic ${found.version} est disponible. Télécharge-le puis ouvre le fichier pour l\'installer par-dessus.'
+        : 'StarMusic ${found.version} est disponible. Réinstalle le nouveau fichier .ipa avec Sideloadly (ou rafraîchis-le dans SideStore).'),
+    actions: [
+      TextButton(onPressed: messenger.hideCurrentMaterialBanner, child: const Text('Plus tard')),
+      TextButton(
+        onPressed: () {
+          messenger.hideCurrentMaterialBanner();
+          launchUrl(found.downloadUrl ?? found.pageUrl, mode: LaunchMode.externalApplication);
+        },
+        child: Text(found.downloadUrl != null ? 'Télécharger' : 'Voir'),
+      ),
+    ],
+  ));
 }

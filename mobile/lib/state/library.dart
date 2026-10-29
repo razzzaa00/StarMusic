@@ -117,6 +117,18 @@ class Library extends ChangeNotifier {
     _save();
   }
 
+  /// Saves a playlist imported from a link; a second import of the same name refreshes it.
+  Playlist importPlaylist(String name, List<Track> tracks) {
+    final existing = playlists.where((p) => p.name == name).firstOrNull;
+    final p = existing ?? Playlist(id: DateTime.now().microsecondsSinceEpoch.toString(), name: name);
+    for (final t in tracks) {
+      if (!p.tracks.contains(t)) p.tracks.add(t);
+    }
+    if (existing == null) playlists.insert(0, p);
+    _save();
+    return p;
+  }
+
   /// Imports the JSON written by "Export all playlists" in StarMusic for PC. Returns the number of tracks added.
   int importPcPlaylists(String content) {
     final json = jsonDecode(content);

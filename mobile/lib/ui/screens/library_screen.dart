@@ -40,6 +40,11 @@ class LibraryScreen extends StatelessWidget {
                 const Text('Playlists', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                 const Spacer(),
                 IconButton(
+                  icon: const Icon(Icons.link_rounded),
+                  tooltip: 'Importer depuis un lien',
+                  onPressed: () => importFromLink(context),
+                ),
+                IconButton(
                   icon: const Icon(Icons.add_rounded),
                   tooltip: 'Nouvelle playlist',
                   onPressed: () async {
@@ -52,7 +57,7 @@ class LibraryScreen extends StatelessWidget {
             if (lib.playlists.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(16),
-                child: Text('Aucune playlist. Crée-en une, ou importe celles du PC depuis les Réglages.', style: TextStyle(color: StarColors.textDim)),
+                child: Text('Aucune playlist. Crée-en une, colle le lien d\'une playlist Spotify, YouTube ou SoundCloud (bouton lien), ou importe celles du PC depuis les Réglages.', style: TextStyle(color: StarColors.textDim)),
               ),
             for (final p in lib.playlists)
               ListTile(
@@ -66,6 +71,39 @@ class LibraryScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+Future<void> importFromLink(BuildContext context) async {
+  final app = AppScope.of(context);
+  final link = await promptText(context, 'Lien d\'une playlist Spotify, YouTube ou SoundCloud', '');
+  if (link == null || link.trim().isEmpty || !context.mounted) return;
+  showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => const AlertDialog(
+      backgroundColor: StarColors.surface,
+      content: Row(children: [SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2)), SizedBox(width: 16), Text('Import en cours…')]),
+    ),
+  );
+  try {
+    final imported = await app.importer.load(link);
+    if (!context.mounted) return;
+    Navigator.of(context).pop();
+    if (imported.tracks.isEmpty) {
+      showMessage(context, 'Aucun titre lisible dans cette playlist');
+      return;
+    }
+    app.library.importPlaylist(imported.name, imported.tracks);
+    showMessage(context, '« ${imported.name} » importée : ${titles(imported.tracks.length)}');
+  } on FormatException {
+    if (!context.mounted) return;
+    Navigator.of(context).pop();
+    showMessage(context, 'Lien non reconnu, ou playlist privée');
+  } catch (_) {
+    if (!context.mounted) return;
+    Navigator.of(context).pop();
+    showMessage(context, 'Import impossible, vérifie ta connexion');
   }
 }
 

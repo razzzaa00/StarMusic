@@ -25,6 +25,9 @@ class _ShellState extends State<Shell> {
     super.initState();
     _app = AppScope.of(context);
     _app.searchRequest.addListener(_toSearch);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) checkForUpdate(context);
+    });
   }
 
   @override

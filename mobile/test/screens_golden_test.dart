@@ -11,9 +11,11 @@ import 'package:starmusic/main.dart';
 import 'package:starmusic/models/track.dart';
 import 'package:starmusic/services/albums.dart';
 import 'package:starmusic/services/lyrics.dart';
+import 'package:starmusic/services/playlist_import.dart';
 import 'package:starmusic/services/search.dart';
 import 'package:starmusic/services/soundcloud.dart';
 import 'package:starmusic/services/stream_resolver.dart';
+import 'package:starmusic/services/updates.dart';
 import 'package:starmusic/services/youtube.dart';
 import 'package:starmusic/services/youtube_music.dart';
 import 'package:starmusic/state/library.dart';
@@ -33,6 +35,13 @@ class FakeSearch extends SearchService {
   FakeSearch(YouTubeApi yt, SoundCloudApi sc) : super(YouTubeMusicApi(), yt, sc);
   @override
   Stream<List<Track>> search(String query, SearchScope scope) => Stream.value(demo);
+}
+
+class FakeUpdates extends UpdateChecker {
+  @override
+  Future<String> installedVersion() async => '1.2.0';
+  @override
+  Future<AppUpdate?> check() async => null;
 }
 
 class FakeLyrics extends LyricsService {
@@ -67,7 +76,7 @@ void main() {
     library.toggleFavorite(demo[3]);
     library.importPcPlaylists('{"playlists":[{"name":"Chill","tracks":[{"title":"Wish","artist":"Diplo","source":"youtube","id":"ccccccccccc"}]},{"name":"Rap FR","tracks":[]}]}');
     final player = PlayerController(StreamResolver(sc, yt.client), library);
-    services = AppServices(search: FakeSearch(yt, sc), albums: AlbumService(), lyrics: FakeLyrics(), library: library, player: player);
+    services = AppServices(search: FakeSearch(yt, sc), albums: AlbumService(), lyrics: FakeLyrics(), library: library, player: player, importer: PlaylistImporter(sc), updates: FakeUpdates());
   });
 
   Future<void> pumpApp(WidgetTester tester) async {
